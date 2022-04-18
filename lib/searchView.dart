@@ -32,21 +32,7 @@ class SearchView extends SearchDelegate<MemberRow?> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    Future<List<MemberRow>> future = memberSearchProvider
-        .call(query)
-        .onError(IpBoardViewerUtils.handleError);
-    return IpBoardViewerUtils.buildFutureBuilder<List<MemberRow>>(
-      future,
-      (data) => ListView.builder(
-        itemCount: data.length,
-        itemBuilder: (context, index) {
-          var row = data.elementAt(index);
-          return ListTile(
-            title: Text(row.name),
-          );
-        },
-      ),
-    );
+    return buildResults(context);
   }
 
   @override

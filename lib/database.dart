@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/src/services/asset_bundle.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:mysql1/mysql1.dart';
 
 class IpBoardDatabase {
@@ -10,6 +11,7 @@ class IpBoardDatabase {
       'select member_id, members_display_name, posts, email from members';
 
   final MySqlConnection _conn;
+  var htmlUnescape = HtmlUnescape();
 
   static Future<IpBoardDatabase> create(AssetBundle rootBundle) async {
     final contents = await rootBundle.loadString(
@@ -82,10 +84,11 @@ class IpBoardDatabase {
   }
 
   TopicRow parseTopicRow(ResultRow row) =>
-      TopicRow(row[0], row[1], row[2], row[3]);
+      TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], row[3]);
 
-  PostRow parsePostRow(ResultRow row) =>
-      PostRow(row[0], "${row[1]}", row[2], "${row[3]}", row[4], row[5]);
+  PostRow parsePostRow(ResultRow row) {
+    return PostRow(row[0], "${row[1]}", row[2], htmlUnescape.convert("${row[3]}"), row[4], row[5]);
+  }
 
   MemberRow parseMemberRow(ResultRow row) =>
       MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");

@@ -37,6 +37,7 @@ dependencies:
   mysql1:
   flutter_html:
   intl:
+  html_unescape:
 
 dev_dependencies:
   flutter_test:
