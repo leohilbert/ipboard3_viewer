@@ -23,6 +23,7 @@ class PostsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      shrinkWrap: true,
       controller: IpBoardViewerUtils.getFastScrollController(),
       itemCount: posts.length,
       itemBuilder: (context, index) {

@@ -60,6 +60,14 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   }
 
   @override
+  Future<List<TopicRow>> getTopicsFromMember(MemberRow member) async {
+    Results topics = await _conn.query(
+        'select tid, title, posts, starter_name from topics where starter_id=? order by start_date desc',
+        [member.id]);
+    return topics.map(_parseTopicRow).toList();
+  }
+
+  @override
   Future<List<PostRow>> getPosts(TopicRow topic) async {
     Results posts = await _conn.query(
         'select pid, author_name, post_date, post, topic_id, author_id from posts '
@@ -157,7 +165,7 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
   @override
   Future<List<ForumRow>> getForums() {
     List<ForumRow> back = [];
-      back.add(ForumRow(0, "Main", "", -1));
+    back.add(ForumRow(0, "Main", "", -1));
     for (int i = 1; i < 100; i++) {
       back.add(ForumRow(i, "Forum $i", "Description $i", 0));
     }
@@ -211,6 +219,15 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
   }
 
   @override
+  Future<List<TopicRow>> getTopicsFromMember(MemberRow member) {
+    List<TopicRow> back = [];
+    for (int i = 0; i < 100; i++) {
+      back.add(TopicRow(i, "Topic $i", i * 10, member.name));
+    }
+    return toFuture(back);
+  }
+
+  @override
   Future<List<MemberRow>> searchMembers(String searchTerm) {
     List<MemberRow> back = [];
     for (int id = 0; id < 100; id++) {
@@ -230,6 +247,7 @@ abstract class IpBoardDatabaseInterface {
   Future<List<ForumRow>> getForums();
 
   Future<List<TopicRow>> getTopics(ForumRow forum);
+  Future<List<TopicRow>> getTopicsFromMember(MemberRow member);
 
   Future<List<PostRow>> getPosts(TopicRow topic);
 
@@ -238,4 +256,5 @@ abstract class IpBoardDatabaseInterface {
   Future<List<MemberRow>> searchMembers(String searchTerm);
 
   Future<MemberRow?> getMember(int id);
+
 }

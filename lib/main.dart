@@ -156,17 +156,12 @@ class _IpBoardViewerScreenState extends State<IpBoardViewerScreen> {
     var posts = widget.database
         .getPostsFromMember(member)
         .onError(IpBoardViewerUtils.handleError);
+    var topics = widget.database
+        .getTopicsFromMember(member)
+        .onError(IpBoardViewerUtils.handleError);
     return MaterialPage(
       key: MemberView.valueKey,
-      child: Scaffold(
-        appBar: AppBar(title: Text(member.name)),
-        body: IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
-          posts,
-          (data) => MemberView(
-            posts: data,
-          ),
-        ),
-      ),
+      child: MemberView(member: member, posts: posts, topics: topics,)
     );
   }
 }
