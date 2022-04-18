@@ -73,13 +73,10 @@ class BBCodeConverter {
   var standaloneTags = ['nbsp', 'hr', 'rand'];
 
   tagAllowedInContext(tag) {
-    expectParent(tag) =>
-        (openTags.isNotEmpty && openTags[openTags.length - 1] == tag);
+    expectParent(tag) => (openTags.isNotEmpty && openTags[openTags.length - 1] == tag);
 
     // block tags cannot be inside inline tags
-    if (blockTags.contains(tag) &&
-        (openTags.isNotEmpty &&
-            inlineTags.contains(openTags[openTags.length - 1]))) {
+    if (blockTags.contains(tag) && (openTags.isNotEmpty && inlineTags.contains(openTags[openTags.length - 1]))) {
       return false;
     }
 
@@ -131,25 +128,20 @@ class BBCodeConverter {
       var substring = withoutQuotes(tag.substring(6, tag.length - 1));
       output += """<span style="font-size: ${substring}pt;">""";
     } else if (RegExp(r"^\[style size=[0-9]+\]$").hasMatch(tag)) {
-      output +=
-          """<span style="font-size: ${tag.substring(12, tag.length - 1)}pt;">""";
-    } else if (RegExp(r"""^\[color="?([A-Za-z]+|#[0-9a-fA-F]{6})"?]$""")
-        .hasMatch(tag)) {
-      colorOrHex =
-          withoutQuotes(tag.substring(7, tag.length - 1).toLowerCase());
+      output += """<span style="font-size: ${tag.substring(12, tag.length - 1)}pt;">""";
+    } else if (RegExp(r"""^\[color="?([A-Za-z]+|#[0-9a-fA-F]{6})"?]$""").hasMatch(tag)) {
+      colorOrHex = withoutQuotes(tag.substring(7, tag.length - 1).toLowerCase());
       if (!colorOrHex.startsWith('#') && !allowedColors.contains(colorOrHex)) {
         throw Exception('BBCode.startTag(tag): invalid color or hex code');
       }
       output += """<span style="color: $colorOrHex;">""";
-    } else if (RegExp(r"^\[bgcolor=([A-Za-z]+|#[0-9a-f]{6})\]$")
-        .hasMatch(tag)) {
+    } else if (RegExp(r"^\[bgcolor=([A-Za-z]+|#[0-9a-f]{6})\]$").hasMatch(tag)) {
       colorOrHex = tag.substring(9, tag.length - 1).toLowerCase();
       if (!colorOrHex.startsWith('#') && !allowedColors.contains(colorOrHex)) {
         throw Exception('BBCode.startTag(tag): invalid color or hex code');
       }
       output += """<span style="background: $colorOrHex;">""";
-    } else if (RegExp(r"^\[style color=([A-Za-z]+|#[0-9a-f]{6})\]$")
-        .hasMatch(tag)) {
+    } else if (RegExp(r"^\[style color=([A-Za-z]+|#[0-9a-f]{6})\]$").hasMatch(tag)) {
       colorOrHex = tag.substring(13, tag.length - 1).toLowerCase();
       if (!colorOrHex.startsWith('#') && !allowedColors.contains(colorOrHex)) {
         throw Exception('BBCode.startTag(tag): invalid color or hex code');
@@ -170,8 +162,7 @@ class BBCodeConverter {
     } else if (RegExp(r"^\[code\]$").hasMatch(tag)) {
       output += '<div><pre><code>';
     } else if (RegExp(r"^\[code=[A-Za-z]+\]$").hasMatch(tag)) {
-      output +=
-          """<div class="bbcode-code-lang-${tag.substring(6, tag.length - 1).toLowerCase()}"><pre><code>""";
+      output += """<div class="bbcode-code-lang-${tag.substring(6, tag.length - 1).toLowerCase()}"><pre><code>""";
     } else if (RegExp(r"^\[h1\]$").hasMatch(tag)) {
       output += '<h1>';
     } else if (RegExp(r"^\[h2\]$").hasMatch(tag)) {
@@ -210,15 +201,10 @@ class BBCodeConverter {
       this.url = '';
       captureUrl = true;
       params = tag.substring(5, tag.length - 1).toLowerCase().split('x');
-    } else if (RegExp(r"^\[img width=[1-9][0-9]* height=[1-9][0-9]*\]$")
-        .hasMatch(tag)) {
+    } else if (RegExp(r"^\[img width=[1-9][0-9]* height=[1-9][0-9]*\]$").hasMatch(tag)) {
       this.url = '';
       captureUrl = true;
-      params = tag
-          .substring(5, tag.length - 1)
-          .split(' ')
-          .map((kv) => kv.split('=')[1])
-          .toList();
+      params = tag.substring(5, tag.length - 1).split(' ').map((kv) => kv.split('=')[1]).toList();
     } else if (RegExp(r"^\[youtube\]$").hasMatch(tag)) {
       this.url = '';
       captureUrl = true;
@@ -227,11 +213,9 @@ class BBCodeConverter {
       captureUrl = true;
     } else if (RegExp(r"^\[url=[^\]]+\]$").hasMatch(tag)) {
       try {
-        url = Uri.parse(withoutQuotes(tag.substring(5, tag.length - 1)))
-            .toString();
+        url = Uri.parse(withoutQuotes(tag.substring(5, tag.length - 1))).toString();
         if (RegExp(r"^javascript").hasMatch(url)) {
-          throw Exception(
-              'BBCode.startTag(tag): javascript scheme not allowed');
+          throw Exception('BBCode.startTag(tag): javascript scheme not allowed');
         }
         // normalize and validate URL
         output += """<a href="$url">""";
@@ -239,8 +223,8 @@ class BBCodeConverter {
         throw Exception('BBCode.startTag(tag): Invalid URL');
       }
     } else {
-      if(!tag.contains("[rand")) {
-      throw Exception('BBCode.startTag(tag): unrecognized BBCode');
+      if (!tag.contains("[rand")) {
+        throw Exception('BBCode.startTag(tag): unrecognized BBCode');
       }
     }
 
@@ -339,9 +323,7 @@ class BBCodeConverter {
     } else if (RegExp(r"^\[\/note\]$").hasMatch(tag)) {
       output += ' -->';
     } else if (RegExp(r"^\[\/img\]$").hasMatch(tag)) {
-      var params = this.params.length == 2
-          ? """width="${this.params[0]}" height="${this.params[1]}" """
-          : '';
+      var params = this.params.length == 2 ? """width="${this.params[0]}" height="${this.params[1]}" """ : '';
       this.params = [];
       if (captureUrl) {
         captureUrl = false;
@@ -417,8 +399,7 @@ class BBCodeConverter {
         inTag = false;
         if (token[1] == '/') {
           endTag(token);
-        } else if (standaloneTags
-            .contains(token.substring(1, token.length - 1))) {
+        } else if (standaloneTags.contains(token.substring(1, token.length - 1))) {
           standaloneTag(token);
         } else {
           startTag(token);
@@ -445,8 +426,7 @@ class BBCodeConverter {
     if (input is! String) {
       throw Exception('BBCode.encodeEntities(input): input must be a string.');
     }
-    return input.replaceAllMapped(
-        """/[\u00A0-\u9999<>\&"']/gim""", (ch) => """&#${ch.input[0]};""");
+    return input.replaceAllMapped("""/[\u00A0-\u9999<>&"']/gim""", (ch) => """&#${ch.input[0]};""");
   }
 
   static basename(path) {
