@@ -17,7 +17,7 @@ void main() async {
 }
 
 class IpBoardViewerApp extends StatelessWidget {
-  final IpBoardDatabase database;
+  final IpBoardDatabaseInterface database;
 
   const IpBoardViewerApp({Key? key, required this.database}) : super(key: key);
 
@@ -35,7 +35,7 @@ class IpBoardViewerApp extends StatelessWidget {
 }
 
 class IpBoardViewerScreen extends StatefulWidget {
-  final IpBoardDatabase database;
+  final IpBoardDatabaseInterface database;
 
   const IpBoardViewerScreen({Key? key, required this.database})
       : super(key: key);

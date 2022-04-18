@@ -1,54 +1,65 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/src/services/asset_bundle.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:mysql1/mysql1.dart';
 
-class IpBoardDatabase {
+class IpBoardDatabase implements IpBoardDatabaseInterface {
   static const membersSelect =
       'select member_id, members_display_name, posts, email from members';
 
   final MySqlConnection _conn;
   var htmlUnescape = HtmlUnescape();
 
-  static Future<IpBoardDatabase> create(AssetBundle rootBundle) async {
-    final contents = await rootBundle.loadString(
-      'assets/config/access.json',
-    );
-    final json = jsonDecode(contents);
-    var connectionSettings = ConnectionSettings(
-        host: json['host'],
-        port: json['port'],
-        user: json['user'],
-        password: json['password'],
-        db: json['db']);
-    var conn = await MySqlConnection.connect(connectionSettings);
-    return IpBoardDatabase(conn);
+  static Future<IpBoardDatabaseInterface> create(AssetBundle rootBundle) async {
+    try {
+      final contents = await rootBundle.loadString(
+        'assets/config/access.json',
+      );
+      final json = jsonDecode(contents);
+      var connectionSettings = ConnectionSettings(
+          host: json['host'],
+          port: json['port'],
+          user: json['user'],
+          password: json['password'],
+          db: json['db']);
+      var conn = await MySqlConnection.connect(connectionSettings);
+      return IpBoardDatabase(conn);
+    } catch (e, stackTrace) {
+      debugPrint("Can't load access.json. Returning Mock!");
+      debugPrintStack(stackTrace: stackTrace);
+      return IpBoardDatabaseMock();
+    }
   }
 
   IpBoardDatabase(this._conn);
 
+  @override
   Future<List<ForumRow>> getForums() async {
     List<ForumRow> rows = [];
     Results parents = await _conn.query(
         'select id, name, description, parent_id from forums where parent_id=-1 order by position');
-    for (ForumRow parentRow in parents.map(parseForumRow)) {
+    for (ForumRow parentRow in parents.map(_parseForumRow)) {
       rows.add(parentRow);
       Results children = await _conn.query(
           'select id, name, description, posts from forums where parent_id=? order by position',
           [parentRow.id]);
-      rows.addAll(children.map(parseForumRow));
+      rows.addAll(children.map(_parseForumRow));
     }
     return rows;
   }
 
+  @override
   Future<List<TopicRow>> getTopics(ForumRow forum) async {
     Results topics = await _conn.query(
         'select tid, title, posts, starter_name from topics where forum_id=? order by last_post desc',
         [forum.id]);
-    return topics.map(parseTopicRow).toList();
+    return topics.map(_parseTopicRow).toList();
   }
 
+  @override
   Future<List<PostRow>> getPosts(TopicRow topic) async {
     Results posts = await _conn.query(
         'select pid, author_name, post_date, post, topic_id, author_id from posts '
@@ -60,6 +71,7 @@ class IpBoardDatabase {
         .toList();
   }
 
+  @override
   Future<List<PostRow>> getPostsFromMember(MemberRow member) async {
     Results posts = await _conn.query(
         'select pid, author_name, post_date, post, topic_id, author_id, topics.title from posts '
@@ -72,30 +84,32 @@ class IpBoardDatabase {
         .toList();
   }
 
+  @override
   Future<List<MemberRow>> searchMembers(String searchTerm) async {
     Results members = await _conn.query(
         '$membersSelect where name like ? '
         'or email like ? '
         'or members_display_name like ?',
         ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%"]);
-    return members.map(parseMemberRow).toList();
+    return members.map(_parseMemberRow).toList();
   }
 
+  @override
   Future<MemberRow?> getMember(int id) async {
     Results result =
         await _conn.query('$membersSelect where member_id=?', [id]);
     if (result.isEmpty) return null;
-    return parseMemberRow(result.first);
+    return _parseMemberRow(result.first);
   }
 
-  ForumRow parseForumRow(ResultRow row) {
+  ForumRow _parseForumRow(ResultRow row) {
     return ForumRow(row[0], row[1], "${row[2]}", row[3]);
   }
 
-  TopicRow parseTopicRow(ResultRow row) =>
+  TopicRow _parseTopicRow(ResultRow row) =>
       TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], row[3]);
 
-  MemberRow parseMemberRow(ResultRow row) =>
+  MemberRow _parseMemberRow(ResultRow row) =>
       MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");
 }
 
@@ -137,4 +151,91 @@ class ForumRow {
   int parentId;
 
   ForumRow(this.id, this.name, this.description, this.parentId);
+}
+
+class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
+  @override
+  Future<List<ForumRow>> getForums() {
+    List<ForumRow> back = [];
+      back.add(ForumRow(0, "Main", "", -1));
+    for (int i = 1; i < 100; i++) {
+      back.add(ForumRow(i, "Forum $i", "Description $i", 0));
+    }
+    return toFuture(back);
+  }
+
+  @override
+  Future<MemberRow?> getMember(int id) {
+    return toFuture(MemberRow(id, "User $id", 123, "$id@aol.de"));
+  }
+
+  @override
+  Future<List<PostRow>> getPosts(TopicRow topic) {
+    List<PostRow> back = [];
+    for (int i = 0; i < 100; i++) {
+      back.add(PostRow(
+          i,
+          "User $i",
+          1650285761 + i * 2000,
+          "Ich finde $i ist die schönste Zahl der Welt.",
+          topic.id,
+          i,
+          "Hallo Welt $i"));
+    }
+    return toFuture(back);
+  }
+
+  @override
+  Future<List<PostRow>> getPostsFromMember(MemberRow member) {
+    List<PostRow> back = [];
+    for (int i = 0; i < 100; i++) {
+      back.add(PostRow(
+          i,
+          "User $i",
+          1650285761 + i * 2000,
+          "Ich finde $i ist die schönste Zahl der Welt.",
+          i,
+          member.id,
+          "Hallo Welt $i"));
+    }
+    return toFuture(back);
+  }
+
+  @override
+  Future<List<TopicRow>> getTopics(ForumRow forum) {
+    List<TopicRow> back = [];
+    for (int i = 0; i < 100; i++) {
+      back.add(TopicRow(i, "Topic $i", i * 10, "User $i"));
+    }
+    return toFuture(back);
+  }
+
+  @override
+  Future<List<MemberRow>> searchMembers(String searchTerm) {
+    List<MemberRow> back = [];
+    for (int id = 0; id < 100; id++) {
+      back.add(MemberRow(id, "User $id", 123, "$id@aol.de"));
+    }
+    return toFuture(back);
+  }
+
+  Future<T> toFuture<T>(T forums) {
+    var completer = Completer<T>();
+    completer.complete(forums);
+    return completer.future;
+  }
+}
+
+abstract class IpBoardDatabaseInterface {
+  Future<List<ForumRow>> getForums();
+
+  Future<List<TopicRow>> getTopics(ForumRow forum);
+
+  Future<List<PostRow>> getPosts(TopicRow topic);
+
+  Future<List<PostRow>> getPostsFromMember(MemberRow member);
+
+  Future<List<MemberRow>> searchMembers(String searchTerm);
+
+  Future<MemberRow?> getMember(int id);
 }

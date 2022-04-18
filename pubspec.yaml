@@ -38,7 +38,7 @@ dependencies:
   flutter_html:
   intl:
   html_unescape:
-
+  expandable:
 dev_dependencies:
   flutter_test:
     sdk: flutter
