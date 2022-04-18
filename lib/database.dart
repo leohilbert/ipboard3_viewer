@@ -4,7 +4,12 @@ import 'package:flutter/src/services/asset_bundle.dart';
 import 'package:mysql1/mysql1.dart';
 
 class IpBoardDatabase {
-  MySqlConnection _conn;
+  static const postsSelect =
+      'select pid, author_name, post_date, post, topic_id, author_id from posts';
+  static const membersSelect =
+      'select member_id, members_display_name, posts, email from members';
+
+  final MySqlConnection _conn;
 
   static Future<IpBoardDatabase> create(AssetBundle rootBundle) async {
     final contents = await rootBundle.loadString(
@@ -24,43 +29,87 @@ class IpBoardDatabase {
   IpBoardDatabase(this._conn);
 
   Future<List<ForumRow>> getForums() async {
-    convertRow(ResultRow row) {
-      return ForumRow(row[0], row[1], "${row[2]}", row[3]);
-    }
-
     List<ForumRow> rows = [];
     Results parents = await _conn.query(
         'select id, name, description, parent_id from forums where parent_id=-1 order by position');
-    for (ForumRow parentRow in parents.map(convertRow)) {
+    for (ForumRow parentRow in parents.map(parseForumRow)) {
       rows.add(parentRow);
       Results children = await _conn.query(
-          'select id, name, description, posts from forums where parent_id=${parentRow.id} order by position');
-      rows.addAll(children.map(convertRow));
+          'select id, name, description, posts from forums where parent_id=? order by position',
+          [parentRow.id]);
+      rows.addAll(children.map(parseForumRow));
     }
     return rows;
-    //return results.map((row) => ForumRow(row[0], row[1], "${row[2]}", row[3])).toList();
   }
 
   Future<List<TopicRow>> getTopics(ForumRow forum) async {
     Results topics = await _conn.query(
-        'select tid, title, posts, starter_name from topics where forum_id=${forum.id} order by last_post desc');
-    return topics.map((row) => TopicRow(row[0], row[1], row[2], row[3])).toList();
+        'select tid, title, posts, starter_name from topics where forum_id=? order by last_post desc',
+        [forum.id]);
+    return topics.map(parseTopicRow).toList();
   }
 
   Future<List<PostRow>> getPosts(TopicRow topic) async {
     Results posts = await _conn.query(
-        'select pid, author_name, post_date, post from posts where topic_id=${topic.id} order by post_date asc');
-    return posts.map((row) => PostRow(row[0], "${row[1]}", row[2], "${row[3]}")).toList();
+        '$postsSelect where topic_id=? order by post_date asc', [topic.id]);
+    return posts.map(parsePostRow).toList();
   }
+
+  Future<List<PostRow>> getPostsFromMember(MemberRow member) async {
+    Results posts = await _conn.query(
+        '$postsSelect where author_id=? order by post_date asc', [member.id]);
+    return posts.map(parsePostRow).toList();
+  }
+
+  Future<List<MemberRow>> searchMembers(String searchTerm) async {
+    Results members = await _conn.query(
+        '$membersSelect where name like ? '
+        'or email like ? '
+        'or members_display_name like ?',
+        ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%"]);
+    return members.map(parseMemberRow).toList();
+  }
+
+  Future<MemberRow?> getMember(int id) async {
+    Results result =
+        await _conn.query('$membersSelect where member_id=?', [id]);
+    if (result.isEmpty) return null;
+    return parseMemberRow(result.first);
+  }
+
+  ForumRow parseForumRow(ResultRow row) {
+    return ForumRow(row[0], row[1], "${row[2]}", row[3]);
+  }
+
+  TopicRow parseTopicRow(ResultRow row) =>
+      TopicRow(row[0], row[1], row[2], row[3]);
+
+  PostRow parsePostRow(ResultRow row) =>
+      PostRow(row[0], "${row[1]}", row[2], "${row[3]}", row[4], row[5]);
+
+  MemberRow parseMemberRow(ResultRow row) =>
+      MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");
+}
+
+class MemberRow {
+  int id;
+  String name;
+  int posts;
+  String email;
+
+  MemberRow(this.id, this.name, this.posts, this.email);
 }
 
 class PostRow {
   int id;
-  String author;
+  String authorName;
+  int authorId;
   int postDate;
   String post;
+  int topicId;
 
-  PostRow(this.id, this.author, this.postDate, this.post);
+  PostRow(this.id, this.authorName, this.postDate, this.post, this.topicId,
+      this.authorId);
 }
 
 class TopicRow {

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:intl/intl.dart';
 
 import 'database.dart';
 
 class PostsView extends StatelessWidget {
   static const valueKey = ValueKey("PostsView");
   final List<PostRow> posts;
+  final ValueChanged<PostRow> didSelectPost;
 
-  const PostsView(
-      {Key? key, required this.posts})
-      : super(key: key);
+  const PostsView({Key? key, required this.posts, required this.didSelectPost}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,16 +18,18 @@ class PostsView extends StatelessWidget {
         scrollDirection: Axis.vertical,
         children: posts.map(
           (row) {
+            var dateTime =
+                DateTime.fromMillisecondsSinceEpoch(row.postDate * 1000);
             return Card(
               child: ListTile(
-                //onTap: () => didSelectTopic(row),
+                onTap: () => didSelectPost(row),
                 title: Text(
-                  row.author,
+                  row.authorName,
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("${row.postDate}"),
+                    Text(DateFormat('dd.MM.yy HH:mm:ss').format(dateTime)),
                     Html(data: row.post),
                   ],
                 ),
