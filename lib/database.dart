@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/src/services/asset_bundle.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:mysql1/mysql1.dart';
 
