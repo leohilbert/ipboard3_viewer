@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_html:
+  go_router:
   html_unescape:
   intl:
   mysql1:
@@ -23,3 +24,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/config/

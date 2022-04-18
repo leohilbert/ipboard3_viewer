@@ -27,13 +27,21 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
       var conn = await MySqlConnection.connect(connectionSettings);
       return IpBoardDatabase(conn);
     } catch (e, stackTrace) {
-      debugPrint("Can't load access.json. Returning Mock!");
+      debugPrint("Can't load access.json. Returning Mock! $e");
       debugPrintStack(stackTrace: stackTrace);
       return IpBoardDatabaseMock();
     }
   }
 
   IpBoardDatabase(this._conn);
+
+  @override
+  Future<ForumRow?> getForum(int id) async {
+    Results result = await _conn.query(
+        'select id, name, description, parent_id from forums where id=?', [id]);
+    if (result.isNotEmpty) return _parseForumRow(result.first);
+    return null;
+  }
 
   @override
   Future<List<ForumRow>> getForums() async {
@@ -56,6 +64,16 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
         'select tid, title, posts, starter_name from topics where forum_id=? order by last_post desc',
         [forum.id]);
     return topics.map(_parseTopicRow).toList();
+  }
+
+  @override
+  Future<TopicRow?> getTopic(int topicId) async {
+    Results result = await _conn.query(
+      'select tid, title, posts, starter_name from topics where tid=? order by last_post desc',
+      [topicId],
+    );
+    if (result.isNotEmpty) return _parseTopicRow(result.first);
+    return null;
   }
 
   @override
@@ -162,6 +180,11 @@ class ForumRow {
 
 class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
   @override
+  Future<ForumRow> getForum(int id) {
+    return toFuture(ForumRow(id, "Forum $id", "Description $id", 0));
+  }
+
+  @override
   Future<List<ForumRow>> getForums() {
     List<ForumRow> back = [];
     back.add(ForumRow(0, "Main", "", -1));
@@ -218,6 +241,12 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
   }
 
   @override
+  Future<TopicRow?> getTopic(int topicId) {
+    return toFuture(
+        TopicRow(topicId, "Topic $topicId", topicId * 10, "User $topicId"));
+  }
+
+  @override
   Future<List<TopicRow>> getTopicsFromMember(MemberRow member) {
     List<TopicRow> back = [];
     for (int i = 0; i < 100; i++) {
@@ -245,7 +274,12 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
 abstract class IpBoardDatabaseInterface {
   Future<List<ForumRow>> getForums();
 
+  Future<ForumRow?> getForum(int id);
+
   Future<List<TopicRow>> getTopics(ForumRow forum);
+
+  Future<TopicRow?> getTopic(int topicId);
+
   Future<List<TopicRow>> getTopicsFromMember(MemberRow member);
 
   Future<List<PostRow>> getPosts(TopicRow topic);
@@ -255,5 +289,4 @@ abstract class IpBoardDatabaseInterface {
   Future<List<MemberRow>> searchMembers(String searchTerm);
 
   Future<MemberRow?> getMember(int id);
-
 }

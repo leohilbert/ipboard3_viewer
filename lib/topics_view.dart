@@ -6,7 +6,7 @@ import 'database.dart';
 class TopicsView extends StatelessWidget {
   static const valueKey = ValueKey("TopicsView");
   final List<TopicRow> topics;
-  final ValueChanged didSelectTopic;
+  final ValueChanged<TopicRow> didSelectTopic;
 
   const TopicsView(
       {Key? key, required this.topics, required this.didSelectTopic})

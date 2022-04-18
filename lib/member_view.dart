@@ -11,12 +11,12 @@ class MemberView extends StatelessWidget {
   final Future<List<TopicRow>> topics;
   final MemberRow member;
 
-  const MemberView(
-      {Key? key,
-      required this.posts,
-      required this.topics,
-      required this.member})
-      : super(key: key);
+  const MemberView({
+    Key? key,
+    required this.posts,
+    required this.topics,
+    required this.member,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

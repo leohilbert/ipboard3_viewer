@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ipboard3_viewer/database.dart';
 import 'package:ipboard3_viewer/forums_view.dart';
 import 'package:ipboard3_viewer/member_view.dart';
@@ -23,145 +24,166 @@ class IpBoardViewerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final GoRouter _router = GoRouter(
+      routes: <GoRoute>[
+        GoRoute(
+          path: '/',
+          builder: (BuildContext context, GoRouterState state) => MainScreen(
+            database: database,
+          ),
+        ),
+        GoRoute(
+          path: '/forum/:fid',
+          builder: (BuildContext context, GoRouterState state) {
+            return IpBoardViewerUtils.buildFutureBuilder<ForumRow?>(
+                database.getForum(int.parse(state.params['fid']!)),
+                (data) => ForumScreen(database: database, forum: data!));
+          },
+        ),
+        GoRoute(
+          path: '/topic/:tid',
+          builder: (BuildContext context, GoRouterState state) {
+            return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
+                database.getTopic(int.parse(state.params['tid']!)),
+                (data) => TopicScreen(database: database, topic: data!));
+          },
+        ),
+        GoRoute(
+          path: '/member/:mid',
+          builder: (BuildContext context, GoRouterState state) {
+            return IpBoardViewerUtils.buildFutureBuilder<MemberRow?>(
+                database.getMember(int.parse(state.params['mid']!)),
+                (data) => MemberScreen(database: database, member: data!));
+          },
+        ),
+      ],
+    );
+
+    return MaterialApp.router(
       title: 'IPBoard3 Viewer',
+      routeInformationParser: _router.routeInformationParser,
+      routerDelegate: _router.routerDelegate,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: IpBoardViewerScreen(database: database),
     );
   }
 }
 
-class IpBoardViewerScreen extends StatefulWidget {
+class MainScreen extends StatelessWidget {
   final IpBoardDatabaseInterface database;
 
-  const IpBoardViewerScreen({Key? key, required this.database})
-      : super(key: key);
-
-  @override
-  State<IpBoardViewerScreen> createState() => _IpBoardViewerScreenState();
-}
-
-class _IpBoardViewerScreenState extends State<IpBoardViewerScreen> {
-  ForumRow? _selectedForum;
-  TopicRow? _selectedTopic;
-  MemberRow? _selectedMember;
-
-  //bool _inSearch;
+  const MainScreen({Key? key, required this.database}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      pages: [
-        buildForumsView(context),
-        if (_selectedForum != null) buildTopicsView(_selectedForum!),
-        if (_selectedTopic != null) buildPostsView(_selectedTopic!),
-        if (_selectedMember != null) buildMemberView(_selectedMember!),
-        //if(_inSearch) ,
-      ],
-      onPopPage: (route, result) {
-        final page = route.settings as MaterialPage;
-        if (page.key == TopicsView.valueKey) {
-          _selectedForum = null;
-        } else if (page.key == PostsView.valueKey) {
-          _selectedTopic = null;
-        }
-        return route.didPop(result);
-      },
-    );
-  }
-
-  MaterialPage buildForumsView(BuildContext context) {
     Future<List<ForumRow>> forums =
-        widget.database.getForums().onError(IpBoardViewerUtils.handleError);
-    return MaterialPage(
-      key: ForumsView.valueKey,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('IPBoard'),
-          actions: [
-            IconButton(
-              onPressed: () async {
-                final result = await showSearch(
-                  context: context,
-                  delegate: SearchView(
-                    (searchTerm) => widget.database.searchMembers(searchTerm),
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    _selectedMember = result;
-                  });
-                }
-              },
-              icon: const Icon(Icons.search),
-            ),
-          ],
-        ),
-        body: IpBoardViewerUtils.buildFutureBuilder<List<ForumRow>>(
-          forums,
-          (data) => ForumsView(
-            forums: data,
-            didSelectForum: (forum) {
-              setState(() => _selectedForum = forum);
+        database.getForums().onError(IpBoardViewerUtils.handleError);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('IPBoard'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final result = await showSearch(
+                context: context,
+                delegate: SearchView(
+                  (searchTerm) => database.searchMembers(searchTerm),
+                ),
+              );
+              if (result != null) {
+                context.go("/member/${result.id}");
+              }
             },
+            icon: const Icon(Icons.search),
           ),
+        ],
+      ),
+      body: IpBoardViewerUtils.buildFutureBuilder<List<ForumRow>>(
+        forums,
+        (data) => ForumsView(
+          forums: data,
+          didSelectForum: (forum) {
+            context.go("/forum/${forum.id}");
+          },
         ),
       ),
     );
   }
+}
 
-  MaterialPage buildTopicsView(ForumRow forum) {
-    var topics = widget.database
-        .getTopics(forum)
-        .onError(IpBoardViewerUtils.handleError);
-    return MaterialPage(
-      key: TopicsView.valueKey,
-      child: Scaffold(
-        appBar: AppBar(title: Text(forum.name)),
-        body: IpBoardViewerUtils.buildFutureBuilder<List<TopicRow>>(
-          topics,
-          (data) => TopicsView(
-            topics: data,
-            didSelectTopic: (topic) => setState(() => _selectedTopic = topic),
-          ),
+class ForumScreen extends StatelessWidget {
+  final IpBoardDatabaseInterface database;
+  final ForumRow forum;
+
+  const ForumScreen({Key? key, required this.database, required this.forum})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    var topics =
+        database.getTopics(forum).onError(IpBoardViewerUtils.handleError);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(forum.name),
+      ),
+      body: IpBoardViewerUtils.buildFutureBuilder<List<TopicRow>>(
+        topics,
+        (data) => TopicsView(
+          topics: data,
+          didSelectTopic: (topic) => context.go('/topic/${topic.id}'),
         ),
       ),
     );
   }
+}
 
-  MaterialPage buildPostsView(TopicRow topic) {
+class TopicScreen extends StatelessWidget {
+  final IpBoardDatabaseInterface database;
+  final TopicRow topic;
+
+  const TopicScreen({Key? key, required this.database, required this.topic})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     var posts =
-        widget.database.getPosts(topic).onError(IpBoardViewerUtils.handleError);
-    return MaterialPage(
-      key: PostsView.valueKey,
-      child: Scaffold(
-        appBar: AppBar(title: Text(topic.title)),
-        body: IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
-          posts,
-          (data) => PostsView(
-            posts: data,
-            didSelectPost: (value) async {
-              _selectedMember = await widget.database.getMember(value.authorId);
-            },
-          ),
+        database.getPosts(topic).onError(IpBoardViewerUtils.handleError);
+    return Scaffold(
+      appBar: AppBar(title: Text(topic.title)),
+      body: IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
+        posts,
+        (data) => PostsView(
+          posts: data,
+          didSelectPost: (value) async {
+            context.go("/member/${value.authorId}");
+          },
         ),
       ),
     );
   }
+}
 
-  MaterialPage buildMemberView(MemberRow member) {
-    var posts = widget.database
+class MemberScreen extends StatelessWidget {
+  final IpBoardDatabaseInterface database;
+  final MemberRow member;
+
+  const MemberScreen({Key? key, required this.database, required this.member})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    var posts = database
         .getPostsFromMember(member)
         .onError(IpBoardViewerUtils.handleError);
-    var topics = widget.database
+    var topics = database
         .getTopicsFromMember(member)
         .onError(IpBoardViewerUtils.handleError);
-    return MaterialPage(
-      key: MemberView.valueKey,
-      child: MemberView(member: member, posts: posts, topics: topics,)
+    return MemberView(
+      member: member,
+      posts: posts,
+      topics: topics,
     );
   }
 }
