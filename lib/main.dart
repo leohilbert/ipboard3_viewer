@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ipboard3_viewer/database.dart';
-import 'package:ipboard3_viewer/forumsView.dart';
-import 'package:ipboard3_viewer/memberView.dart';
-import 'package:ipboard3_viewer/postsView.dart';
-import 'package:ipboard3_viewer/searchView.dart';
-import 'package:ipboard3_viewer/topicsView.dart';
+import 'package:ipboard3_viewer/forums_view.dart';
+import 'package:ipboard3_viewer/member_view.dart';
+import 'package:ipboard3_viewer/posts_view.dart';
+import 'package:ipboard3_viewer/search_view.dart';
+import 'package:ipboard3_viewer/topics_view.dart';
 import 'package:ipboard3_viewer/utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //GestureBinding.instance!.resamplingEnabled = true;
   runApp(IpBoardViewerApp(database: await IpBoardDatabase.create(rootBundle)));
 }
 
@@ -168,17 +169,4 @@ class _IpBoardViewerScreenState extends State<IpBoardViewerScreen> {
       ),
     );
   }
-
-//
-// MaterialPage buildSearchView() {
-//   return MaterialPage(
-//     key: SearchView.valueKey,
-//     child: Scaffold(
-//       appBar: AppBar(title: const Text("Search")),
-//       body: SearchView(memberSearchProvider: (String searchTerm) { return widget._db.searchMembers(searchTerm) },
-//       ),
-//     ),
-//   );
-// }
-
 }

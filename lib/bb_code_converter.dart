@@ -1,3 +1,4 @@
+/// quick&dirty port from https://github.com/tcort/tcbbcode :D
 class BBCodeConverter {
   String output = '';
   var openTags = [];

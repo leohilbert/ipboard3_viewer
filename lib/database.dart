@@ -5,8 +5,6 @@ import 'package:html_unescape/html_unescape.dart';
 import 'package:mysql1/mysql1.dart';
 
 class IpBoardDatabase {
-  static const postsSelect =
-      'select pid, author_name, post_date, post, topic_id, author_id from posts';
   static const membersSelect =
       'select member_id, members_display_name, posts, email from members';
 
@@ -53,14 +51,25 @@ class IpBoardDatabase {
 
   Future<List<PostRow>> getPosts(TopicRow topic) async {
     Results posts = await _conn.query(
-        '$postsSelect where topic_id=? order by post_date asc', [topic.id]);
-    return posts.map(parsePostRow).toList();
+        'select pid, author_name, post_date, post, topic_id, author_id from posts '
+        'where topic_id=? order by post_date asc',
+        [topic.id]);
+    return posts
+        .map((row) => PostRow(row[0], "${row[1]}", row[2],
+            htmlUnescape.convert("${row[3]}"), row[4], row[5], topic.title))
+        .toList();
   }
 
   Future<List<PostRow>> getPostsFromMember(MemberRow member) async {
     Results posts = await _conn.query(
-        '$postsSelect where author_id=? order by post_date asc', [member.id]);
-    return posts.map(parsePostRow).toList();
+        'select pid, author_name, post_date, post, topic_id, author_id, topics.title from posts '
+        'left join topics on posts.topic_id=topics.tid '
+        'where author_id=? order by post_date asc',
+        [member.id]);
+    return posts
+        .map((row) => PostRow(row[0], "${row[1]}", row[2],
+            htmlUnescape.convert("${row[3]}"), row[4], row[5], row[6]))
+        .toList();
   }
 
   Future<List<MemberRow>> searchMembers(String searchTerm) async {
@@ -86,10 +95,6 @@ class IpBoardDatabase {
   TopicRow parseTopicRow(ResultRow row) =>
       TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], row[3]);
 
-  PostRow parsePostRow(ResultRow row) {
-    return PostRow(row[0], "${row[1]}", row[2], htmlUnescape.convert("${row[3]}"), row[4], row[5]);
-  }
-
   MemberRow parseMemberRow(ResultRow row) =>
       MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");
 }
@@ -106,13 +111,14 @@ class MemberRow {
 class PostRow {
   int id;
   String authorName;
+  String topicName;
   int authorId;
   int postDate;
   String post;
   int topicId;
 
   PostRow(this.id, this.authorName, this.postDate, this.post, this.topicId,
-      this.authorId);
+      this.authorId, this.topicName);
 }
 
 class TopicRow {

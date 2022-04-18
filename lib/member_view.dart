@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ipboard3_viewer/postsView.dart';
+import 'package:ipboard3_viewer/posts_view.dart';
 
 import 'database.dart';
 
@@ -13,8 +13,8 @@ class MemberView extends StatelessWidget {
   Widget build(BuildContext context) {
     return PostsView(
       posts: posts,
+      memberView: true,
       didSelectPost: (value) {
-
       },
     );
   }

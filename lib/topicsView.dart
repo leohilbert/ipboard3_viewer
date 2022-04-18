@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ipboard3_viewer/utils.dart';
 
 import 'database.dart';
 
@@ -13,29 +14,27 @@ class TopicsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      child: ListView(
-        scrollDirection: Axis.vertical,
-        children: topics.map(
-          (row) {
-            return Card(
-              child: ListTile(
-                onTap: () => didSelectTopic(row),
-                title: Text(
-                  row.title,
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(row.starterName),
-                    Text("Posts: ${row.postCount}"),
-                  ],
-                ),
-              ),
-            );
-          },
-        ).toList(),
-      ),
+    return ListView.builder(
+      controller: IpBoardViewerUtils.getFastScrollController(),
+      itemCount: topics.length,
+      itemBuilder: (context, index) {
+        TopicRow row = topics.elementAt(index);
+        return Card(
+          child: ListTile(
+            onTap: () => didSelectTopic(row),
+            title: Text(
+              row.title,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(row.starterName),
+                Text("Posts: ${row.postCount}"),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

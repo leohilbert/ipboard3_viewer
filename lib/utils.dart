@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 class IpBoardViewerUtils {
   static FutureBuilder<D> buildFutureBuilder<D>(
@@ -26,5 +28,24 @@ class IpBoardViewerUtils {
     debugPrint("$error");
     debugPrintStack(stackTrace: stackTrace);
     throw error;
+  }
+
+  static ScrollController getFastScrollController() {
+    const _extraScrollSpeed = 200;
+    var _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      ScrollDirection scrollDirection =
+          _scrollController.position.userScrollDirection;
+      if (scrollDirection != ScrollDirection.idle) {
+        double scrollEnd = _scrollController.offset +
+            (scrollDirection == ScrollDirection.reverse
+                ? _extraScrollSpeed
+                : -_extraScrollSpeed);
+        scrollEnd = min(_scrollController.position.maxScrollExtent,
+            max(_scrollController.position.minScrollExtent, scrollEnd));
+        _scrollController.jumpTo(scrollEnd);
+      }
+    });
+    return _scrollController;
   }
 }
