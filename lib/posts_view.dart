@@ -1,8 +1,10 @@
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:html/dom.dart' as dom;
 import 'package:ipboard3_viewer/utils.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'bb_code_converter.dart';
 import 'database.dart';
@@ -101,19 +103,36 @@ class PostsView extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Icon(Icons.arrow_circle_down),
         ),
-        collapsed: SelectableHtml(data: parsed.substring(0, threshold)),
-        expanded: SelectableHtml(data: parsed),
+        collapsed: buildHtml(parsed.substring(0, threshold)),
+        expanded: buildHtml(parsed),
       );
     } else {
-      return SelectableHtml(data: parsed);
+      return buildHtml(parsed);
     }
+
+    // Wenn man SelectableHtml/SelectableText nutzt,
+    // merkt sich Flutter nichtmehr die ScrollPositon...
+    // Ist glaub ich ein bug in Flutter.
   }
+
+  Html buildHtml(String parsed) => Html(
+        data: parsed,
+        onLinkTap: (
+          String? url,
+          RenderContext context,
+          Map<String, String> attributes,
+          dom.Element? element,
+        ) {
+          debugPrint(url);
+          launch(url!);
+        },
+      );
 
   String parsePost(PostRow row) {
     try {
       return BBCodeConverter().parse(row.post);
-    } catch (_) {
-      debugPrint("error parsing post");
+    } catch (e) {
+      debugPrint("error parsing post: $e");
     }
     return row.post;
   }

@@ -101,7 +101,7 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
     Results posts = await _conn.query(
         'select pid, author_name, post_date, post, topic_id, author_id, topics.title from posts '
         'left join topics on posts.topic_id=topics.tid '
-        'where author_id=? order by post_date desc',
+        'where author_id=? order by post_date asc',
         [member.id]);
     return posts
         .map((row) => PostRow(row[0], "${row[1]}", row[2],

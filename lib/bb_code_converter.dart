@@ -95,9 +95,9 @@ class BBCodeConverter {
   }
 
   standaloneTag(tag) {
-    if (RegExp(r"^\[hr\]$").hasMatch(tag)) {
+    if (match(r"^\[hr\]$", tag)) {
       output += '<hr/>';
-    } else if (RegExp(r"^\[nbsp\]$").hasMatch(tag)) {
+    } else if (match(r"^\[nbsp\]$", tag)) {
       output += '&nbsp;';
     }
   }
@@ -106,115 +106,118 @@ class BBCodeConverter {
     String colorOrHex;
     String url;
 
-    if (RegExp(r"^\[b\]$").hasMatch(tag)) {
+    if (match(r"^\[b\]$", tag)) {
       output += '<b>';
-    } else if (RegExp(r"^\[i\]$").hasMatch(tag)) {
+    } else if (match(r"^\[i\]$", tag)) {
       output += '<i>';
-    } else if (RegExp(r"^\[u\]$").hasMatch(tag)) {
+    } else if (match(r"^\[u\]$", tag)) {
       output += '<u>';
-    } else if (RegExp(r"^\[s\]$").hasMatch(tag)) {
+    } else if (match(r"^\[s\]$", tag)) {
       output += '<s>';
-    } else if (RegExp(r"^\[del\]$").hasMatch(tag)) {
+    } else if (match(r"^\[del\]$", tag)) {
       output += '<del>';
-    } else if (RegExp(r"^\[ins\]$").hasMatch(tag)) {
+    } else if (match(r"^\[ins\]$", tag)) {
       output += '<ins>';
-    } else if (RegExp(r"^\[em\]$").hasMatch(tag)) {
+    } else if (match(r"^\[em\]$", tag)) {
       output += '<em>';
-    } else if (RegExp(r"^\[sub\]$").hasMatch(tag)) {
+    } else if (match(r"^\[sub\]$", tag)) {
       output += '<sub>';
-    } else if (RegExp(r"^\[sup\]$").hasMatch(tag)) {
+    } else if (match(r"^\[sup\]$", tag)) {
       output += '<sup>';
-    } else if (RegExp(r"""^\[size="?[0-9]+\"?]$""").hasMatch(tag)) {
+    } else if (match(r"""^\[size="?[0-9]+\"?]$""", tag)) {
       var substring = withoutQuotes(tag.substring(6, tag.length - 1));
       output += """<span style="font-size: ${substring}pt;">""";
-    } else if (RegExp(r"^\[style size=[0-9]+\]$").hasMatch(tag)) {
+    } else if (match(r"^\[style size=[0-9]+\]$", tag)) {
       output += """<span style="font-size: ${tag.substring(12, tag.length - 1)}pt;">""";
-    } else if (RegExp(r"""^\[color="?([A-Za-z]+|#[0-9a-fA-F]{6})"?]$""").hasMatch(tag)) {
+    } else if (match(r"""^\[color="?([A-Za-z]+|#[0-9a-fA-F]{6})"?]$""", tag)) {
       colorOrHex = withoutQuotes(tag.substring(7, tag.length - 1).toLowerCase());
       if (!colorOrHex.startsWith('#') && !allowedColors.contains(colorOrHex)) {
         throw Exception('BBCode.startTag(tag): invalid color or hex code');
       }
       output += """<span style="color: $colorOrHex;">""";
-    } else if (RegExp(r"^\[bgcolor=([A-Za-z]+|#[0-9a-f]{6})\]$").hasMatch(tag)) {
+    } else if (match(r"^\[bgcolor=([A-Za-z]+|#[0-9a-f]{6})\]$", tag)) {
       colorOrHex = tag.substring(9, tag.length - 1).toLowerCase();
       if (!colorOrHex.startsWith('#') && !allowedColors.contains(colorOrHex)) {
         throw Exception('BBCode.startTag(tag): invalid color or hex code');
       }
       output += """<span style="background: $colorOrHex;">""";
-    } else if (RegExp(r"^\[style color=([A-Za-z]+|#[0-9a-f]{6})\]$").hasMatch(tag)) {
+    } else if (match(r"^\[style color=([A-Za-z]+|#[0-9a-f]{6})\]$", tag)) {
       colorOrHex = tag.substring(13, tag.length - 1).toLowerCase();
       if (!colorOrHex.startsWith('#') && !allowedColors.contains(colorOrHex)) {
         throw Exception('BBCode.startTag(tag): invalid color or hex code');
       }
       output += """<span style="color: $colorOrHex;">""";
-    } else if (RegExp(r"^\[center\]$").hasMatch(tag)) {
+    } else if (match(r"^\[center\]$", tag)) {
       output += '<div style="text-align: center;">';
-    } else if (RegExp(r"^\[left\]$").hasMatch(tag)) {
+    } else if (match(r"^\[left\]$", tag)) {
       output += '<div style="text-align: left;">';
-    } else if (RegExp(r"^\[right\]$").hasMatch(tag)) {
+    } else if (match(r"^\[right\]$", tag)) {
       output += '<div style="text-align: right;">';
-    } else if (RegExp(r"^\[justify\]$").hasMatch(tag)) {
+    } else if (match(r"^\[justify\]$", tag)) {
       output += '<div style="text-align: justify;">';
-    } else if (RegExp(r"^\[quote.*?\]$").hasMatch(tag)) {
-      output += '<blockquote>';
-    } else if (RegExp(r"^\[pre\]$").hasMatch(tag)) {
+    } else if (match(r"^\[quote.*?\]$", tag)) {
+      output += '<div style="background-color: lightgray;">';
+    } else if (match(r"^\[pre\]$", tag)) {
       output += '<pre>';
-    } else if (RegExp(r"^\[code\]$").hasMatch(tag)) {
+    } else if (match(r"^\[code\]$", tag)) {
       output += '<div><pre><code>';
-    } else if (RegExp(r"^\[code=[A-Za-z]+\]$").hasMatch(tag)) {
+    } else if (match(r"^\[code=[A-Za-z]+\]$", tag)) {
       output += """<div class="bbcode-code-lang-${tag.substring(6, tag.length - 1).toLowerCase()}"><pre><code>""";
-    } else if (RegExp(r"^\[h1\]$").hasMatch(tag)) {
+    } else if (match(r"^\[h1\]$", tag)) {
       output += '<h1>';
-    } else if (RegExp(r"^\[h2\]$").hasMatch(tag)) {
+    } else if (match(r"^\[h2\]$", tag)) {
       output += '<h2>';
-    } else if (RegExp(r"^\[h3\]$").hasMatch(tag)) {
+    } else if (match(r"^\[h3\]$", tag)) {
       output += '<h3>';
-    } else if (RegExp(r"^\[h4\]$").hasMatch(tag)) {
+    } else if (match(r"^\[h4\]$", tag)) {
       output += '<h4>';
-    } else if (RegExp(r"^\[h5\]$").hasMatch(tag)) {
+    } else if (match(r"^\[h5\]$", tag)) {
       output += '<h5>';
-    } else if (RegExp(r"^\[h6\]$").hasMatch(tag)) {
+    } else if (match(r"^\[h6\]$", tag)) {
       output += '<h6>';
-    } else if (RegExp(r"^\[table\]$").hasMatch(tag)) {
+    } else if (match(r"^\[table\]$", tag)) {
       output += '<table>';
-    } else if (RegExp(r"^\[tr\]$").hasMatch(tag)) {
+    } else if (match(r"^\[tr\]$", tag)) {
       output += '<tr>';
-    } else if (RegExp(r"^\[td\]$").hasMatch(tag)) {
+    } else if (match(r"^\[td\]$", tag)) {
       output += '<td>';
-    } else if (RegExp(r"^\[th\]$").hasMatch(tag)) {
+    } else if (match(r"^\[th\]$", tag)) {
       output += '<th>';
-    } else if (RegExp(r"^\[list\]$").hasMatch(tag)) {
+    } else if (match(r"^\[list\]$", tag)) {
       output += '<ul>';
-    } else if (RegExp(r"^\[ul\]$").hasMatch(tag)) {
+    } else if (match(r"^\[ul\]$", tag)) {
       output += '<ul>';
-    } else if (RegExp(r"^\[ol\]$").hasMatch(tag)) {
+    } else if (match(r"^\[ol\]$", tag)) {
       output += '<ol>';
-    } else if (RegExp(r"^\[li\]$").hasMatch(tag)) {
+    } else if (match(r"^\[li\]$", tag)) {
       output += '<li>';
-    } else if (RegExp(r"^\[note\]$").hasMatch(tag)) {
+    } else if (match(r"^\[note\]$", tag)) {
       output += '<!-- ';
-    } else if (RegExp(r"^\[img\]$").hasMatch(tag)) {
+    } else if (match(r"^\[hide\]$", tag)) {
+      //output += '<details><summary>Hidden</summary><p>';
+      output += 'HIDE';
+    } else if (match(r"^\[img\]$", tag)) {
       this.url = '';
       captureUrl = true;
       params = [];
-    } else if (RegExp(r"^\[img=[1-9][0-9]*x[1-9][0-9]*\]$").hasMatch(tag)) {
+    } else if (match(r"^\[img=[1-9][0-9]*x[1-9][0-9]*\]$", tag)) {
       this.url = '';
       captureUrl = true;
       params = tag.substring(5, tag.length - 1).toLowerCase().split('x');
-    } else if (RegExp(r"^\[img width=[1-9][0-9]* height=[1-9][0-9]*\]$").hasMatch(tag)) {
+    } else if (match(r"^\[img width=[1-9][0-9]* height=[1-9][0-9]*\]$", tag)) {
       this.url = '';
       captureUrl = true;
       params = tag.substring(5, tag.length - 1).split(' ').map((kv) => kv.split('=')[1]).toList();
-    } else if (RegExp(r"^\[youtube\]$").hasMatch(tag)) {
+    } else if (match(r"^\[youtube\]$", tag)) {
       this.url = '';
       captureUrl = true;
-    } else if (RegExp(r"^\[url\]$").hasMatch(tag)) {
+    } else if (match(r"^\[url\]$", tag)) {
       this.url = '';
       captureUrl = true;
-    } else if (RegExp(r"^\[url=[^\]]+\]$").hasMatch(tag)) {
+    } else if (match(r"^\[url=[^\]]+\]$", tag)) {
       try {
         url = Uri.parse(withoutQuotes(tag.substring(5, tag.length - 1))).toString();
-        if (RegExp(r"^javascript").hasMatch(url)) {
+        if (match(r"^javascript", url)) {
           throw Exception('BBCode.startTag(tag): javascript scheme not allowed');
         }
         // normalize and validate URL
@@ -223,9 +226,7 @@ class BBCodeConverter {
         throw Exception('BBCode.startTag(tag): Invalid URL');
       }
     } else {
-      if (!tag.contains("[rand")) {
-        throw Exception('BBCode.startTag(tag): unrecognized BBCode');
-      }
+        print('BBCode.startTag(tag): unrecognized BBCode: $tag');
     }
 
     var actualTag = tag.substring(1).split(RegExp(r"[ =\]]"))[0];
@@ -252,77 +253,80 @@ class BBCodeConverter {
       throw Exception('BBCode.endTag(tag): tag must be a string.');
     }
 
-    if (RegExp(r"^\[\/b\]$").hasMatch(tag)) {
+    if (match(r"^\[\/b\]$", tag)) {
       output += '</b>';
-    } else if (RegExp(r"^\[\/i\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/i\]$", tag)) {
       output += '</i>';
-    } else if (RegExp(r"^\[\/u\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/u\]$", tag)) {
       output += '</u>';
-    } else if (RegExp(r"^\[\/s\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/s\]$", tag)) {
       output += '</s>';
-    } else if (RegExp(r"^\[\/del\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/del\]$", tag)) {
       output += '</del>';
-    } else if (RegExp(r"^\[\/ins\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/ins\]$", tag)) {
       output += '</ins>';
-    } else if (RegExp(r"^\[\/em\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/em\]$", tag)) {
       output += '</em>';
-    } else if (RegExp(r"^\[\/sub\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/sub\]$", tag)) {
       output += '</sub>';
-    } else if (RegExp(r"^\[\/sup\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/sup\]$", tag)) {
       output += '</sup>';
-    } else if (RegExp(r"^\[\/size\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/size\]$", tag)) {
       output += '</span>';
-    } else if (RegExp(r"^\[\/style\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/style\]$", tag)) {
       output += '</span>';
-    } else if (RegExp(r"^\[\/color\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/color\]$", tag)) {
       output += '</span>';
-    } else if (RegExp(r"^\[\/bgcolor\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/bgcolor\]$", tag)) {
       output += '</span>';
-    } else if (RegExp(r"^\[\/center\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/center\]$", tag)) {
       output += '</div>';
-    } else if (RegExp(r"^\[\/left\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/left\]$", tag)) {
       output += '</div>';
-    } else if (RegExp(r"^\[\/right\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/right\]$", tag)) {
       output += '</div>';
-    } else if (RegExp(r"^\[\/justify\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/justify\]$", tag)) {
       output += '</div>';
-    } else if (RegExp(r"^\[\/quote\]$").hasMatch(tag)) {
-      output += '</blockquote>';
-    } else if (RegExp(r"^\[\/pre\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/quote\]$", tag)) {
+      output += '</div>';
+    } else if (match(r"^\[\/pre\]$", tag)) {
       output += '</pre>';
-    } else if (RegExp(r"^\[\/code\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/code\]$", tag)) {
       output += '</code></pre></div>';
-    } else if (RegExp(r"^\[\/h1\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/h1\]$", tag)) {
       output += '</h1>';
-    } else if (RegExp(r"^\[\/h2\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/h2\]$", tag)) {
       output += '</h2>';
-    } else if (RegExp(r"^\[\/h3\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/h3\]$", tag)) {
       output += '</h3>';
-    } else if (RegExp(r"^\[\/h4\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/h4\]$", tag)) {
       output += '</h4>';
-    } else if (RegExp(r"^\[\/h5\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/h5\]$", tag)) {
       output += '</h5>';
-    } else if (RegExp(r"^\[\/h6\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/h6\]$", tag)) {
       output += '</h6>';
-    } else if (RegExp(r"^\[\/table\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/table\]$", tag)) {
       output += '</table>';
-    } else if (RegExp(r"^\[\/tr\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/tr\]$", tag)) {
       output += '</tr>';
-    } else if (RegExp(r"^\[\/td\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/td\]$", tag)) {
       output += '</td>';
-    } else if (RegExp(r"^\[\/th\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/th\]$", tag)) {
       output += '</th>';
-    } else if (RegExp(r"^\[\/list\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/list\]$", tag)) {
       output += '</ul>';
-    } else if (RegExp(r"^\[\/ul\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/ul\]$", tag)) {
       output += '</ul>';
-    } else if (RegExp(r"^\[\/ol\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/ol\]$", tag)) {
       output += '</ol>';
-    } else if (RegExp(r"^\[\/li\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/li\]$", tag)) {
       output += '</li>';
-    } else if (RegExp(r"^\[\/note\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/note\]$", tag)) {
       output += ' -->';
-    } else if (RegExp(r"^\[\/img\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/Hide]$", tag)) {
+      //output += '</p></details>';
+      output += '/HIDE';
+    } else if (match(r"^\[\/img\]$", tag)) {
       var params = this.params.length == 2 ? """width="${this.params[0]}" height="${this.params[1]}" """ : '';
       this.params = [];
       if (captureUrl) {
@@ -338,10 +342,10 @@ class BBCodeConverter {
       } else {
         throw Exception('BBCode.endTag(tag): internal error');
       }
-    } else if (RegExp(r"^\[\/youtube\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/youtube\]$", tag)) {
       if (captureUrl) {
         captureUrl = false;
-        if (RegExp(r"/^[A-Za-z0-9_\-]{11}$/").hasMatch(url)) {
+        if (match(r"/^[A-Za-z0-9_\-]{11}$/", url)) {
           output +=
               """<div><iframe width="560" height="315" src="https://www.youtube.com/embed/$url" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>""";
         } else {
@@ -350,7 +354,7 @@ class BBCodeConverter {
       } else {
         throw Exception('BBCode.endTag(tag): internal error');
       }
-    } else if (RegExp(r"^\[\/url\]$").hasMatch(tag)) {
+    } else if (match(r"^\[\/url\]$", tag)) {
       if (captureUrl) {
         captureUrl = false;
         try {
@@ -366,16 +370,18 @@ class BBCodeConverter {
       throw Exception('BBCode.endTag(tag): unrecognized BBCode');
     }
 
-    var expectedTag = openTags.removeAt(0);
-    var actualTag = tag.substring(2).split(RegExp(r"[ =\]]"))[0];
-    if (expectedTag != actualTag) {
-      throw Exception('BBCode.endTag(tag): unbalanced tags');
+    String expectedTag = openTags.removeAt(0);
+    String actualTag = tag.substring(2).split(RegExp(r"[ =\]]"))[0];
+    if (expectedTag.toLowerCase() != actualTag.toLowerCase()) {
+      print('BBCode.endTag(tag): unbalanced tags: $expectedTag != $actualTag');
     }
   }
 
+  bool match(String regex, String match) => RegExp(regex, caseSensitive: false).hasMatch(match);
+
   done() {
     if (openTags.isNotEmpty) {
-      throw Exception('BBCode.done(): missing closing tag(s)');
+      print('BBCode.done(): missing closing tag(s)');
     }
     var output = this.output;
     this.output = '';
