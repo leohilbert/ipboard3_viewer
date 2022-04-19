@@ -8,9 +8,11 @@ class TopicsView extends StatelessWidget {
   final List<TopicRow> topics;
   final ValueChanged<TopicRow> didSelectTopic;
 
-  const TopicsView(
-      {Key? key, required this.topics, required this.didSelectTopic})
-      : super(key: key);
+  const TopicsView({
+    Key? key,
+    required this.topics,
+    required this.didSelectTopic,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

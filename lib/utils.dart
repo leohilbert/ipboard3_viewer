@@ -31,9 +31,15 @@ class IpBoardViewerUtils {
     throw error;
   }
 
+  static const _extraScrollSpeed = 200;
+
   static ScrollController getFastScrollController() {
-    const _extraScrollSpeed = 200;
     var _scrollController = ScrollController();
+    addFastControllerListener(_scrollController);
+    return _scrollController;
+  }
+
+  static void addFastControllerListener(ScrollController _scrollController) {
     _scrollController.addListener(() {
       ScrollDirection scrollDirection =
           _scrollController.position.userScrollDirection;
@@ -47,7 +53,6 @@ class IpBoardViewerUtils {
         _scrollController.jumpTo(scrollEnd);
       }
     });
-    return _scrollController;
   }
 
   static String parseUnixDate(int unix) {

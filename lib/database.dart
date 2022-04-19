@@ -114,7 +114,8 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
     Results members = await _conn.query(
         '$membersSelect where name like ? '
         'or email like ? '
-        'or members_display_name like ?',
+        'or members_display_name like ? '
+        'order by posts desc',
         ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%"]);
     return members.map(_parseMemberRow).toList();
   }

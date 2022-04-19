@@ -50,17 +50,25 @@ class IpBoardViewerApp extends StatelessWidget {
         path: '/forum/:fid',
         builder: (BuildContext context, GoRouterState state) {
           return IpBoardViewerUtils.buildFutureBuilder<ForumRow?>(
-              database.getForum(int.parse(state.params['fid']!)),
-                  (data) => ForumScreen(database: database, forum: data!));
+            database.getForum(int.parse(state.params['fid']!)),
+            (data) => ForumScreen(database: database, forum: data!),
+          );
         },
       ),
       GoRoute(
         name: Routes.topic,
         path: '/topic/:tid',
         builder: (BuildContext context, GoRouterState state) {
+          String? postId = state.queryParams['pid'];
+          int? scrollToPostId = postId != null ? int.parse(postId) : null;
           return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
-              database.getTopic(int.parse(state.params['tid']!)),
-                  (data) => TopicScreen(database: database, topic: data!));
+            database.getTopic(int.parse(state.params['tid']!)),
+            (data) => TopicScreen(
+              database: database,
+              topic: data!,
+              scrollToPostId: scrollToPostId,
+            ),
+          );
         },
       ),
       GoRoute(
@@ -68,8 +76,9 @@ class IpBoardViewerApp extends StatelessWidget {
         path: '/member/:mid',
         builder: (BuildContext context, GoRouterState state) {
           return IpBoardViewerUtils.buildFutureBuilder<MemberRow?>(
-              database.getMember(int.parse(state.params['mid']!)),
-                  (data) => MemberScreen(database: database, member: data!));
+            database.getMember(int.parse(state.params['mid']!)),
+            (data) => MemberScreen(database: database, member: data!),
+          );
         },
       ),
     ],
@@ -140,8 +149,10 @@ class ForumScreen extends StatelessWidget {
         (data) => TopicsView(
           key: Key("topicsForForum-${forum.id}"),
           topics: data,
-          didSelectTopic: (topic) =>
-              context.pushNamed(Routes.topic, params: {"tid": "${topic.id}"}),
+          didSelectTopic: (topic) => context.pushNamed(
+            Routes.topic,
+            params: {"tid": "${topic.id}"},
+          ),
         ),
       ),
     );
@@ -151,9 +162,14 @@ class ForumScreen extends StatelessWidget {
 class TopicScreen extends StatelessWidget {
   final IpBoardDatabaseInterface database;
   final TopicRow topic;
+  final int? scrollToPostId;
 
-  const TopicScreen({Key? key, required this.database, required this.topic})
-      : super(key: key);
+  const TopicScreen({
+    Key? key,
+    required this.database,
+    required this.topic,
+    this.scrollToPostId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +185,7 @@ class TopicScreen extends StatelessWidget {
         (data) => PostsView(
           key: Key("postsForTopic-${topic.id}"),
           posts: data,
+          scrollToPostId: scrollToPostId,
           didSelectPost: (value) async {
             context.push("/member/${value.authorId}");
           },
@@ -194,6 +211,7 @@ class MemberScreen extends StatelessWidget {
         .getTopicsFromMember(member)
         .onError(IpBoardViewerUtils.handleError);
     return MemberView(
+      key: Key('member-${member.id}'),
       member: member,
       posts: posts,
       topics: topics,

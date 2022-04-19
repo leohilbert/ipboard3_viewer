@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:ipboard3_viewer/posts_view.dart';
 import 'package:ipboard3_viewer/routes.dart';
@@ -26,14 +28,16 @@ class MemberView extends StatelessWidget {
         child: Scaffold(
             appBar: AppBar(
               title: Text(member.name),
-              bottom: const TabBar(
-                tabs: [
+              bottom: TabBar(
+                key: PageStorageKey<Type>(TabBar),
+                tabs: const [
                   Tab(icon: Icon(Icons.notes)),
                   Tab(icon: Icon(Icons.topic)),
                 ],
               ),
             ),
             body: TabBarView(
+              key: PageStorageKey<Type>(TabBarView),
               children: [
                 IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
                   posts,
@@ -42,7 +46,11 @@ class MemberView extends StatelessWidget {
                     posts: data,
                     memberView: true,
                     didSelectPost: (value) {
-                      context.pushNamed(Routes.topic, params: {"tid": "${value.topicId}"});
+                      context.pushNamed(
+                        Routes.topic,
+                        params: {"tid": "${value.topicId}"},
+                        queryParams: {'pid': "${value.id}"},
+                      );
                     },
                   ),
                 ),
@@ -52,7 +60,10 @@ class MemberView extends StatelessWidget {
                     key: Key("topicsForMember-${member.id}"),
                     topics: data,
                     didSelectTopic: (value) {
-                      context.pushNamed(Routes.topic, params: {"tid": "${value.id}"});
+                      context.pushNamed(
+                        Routes.topic,
+                        params: {"tid": "${value.id}"},
+                      );
                     },
                   ),
                 ),
