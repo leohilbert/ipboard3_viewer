@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ipboard3_viewer/database/ipboard_database.dart';
 import 'package:ipboard3_viewer/misc/utils.dart';
 import 'package:ipboard3_viewer/routes.dart';
+import 'package:ipboard3_viewer/views/direct_messages_topcs_view.dart';
 import 'package:ipboard3_viewer/views/posts_view.dart';
 import 'package:ipboard3_viewer/views/topics_view.dart';
 
@@ -14,7 +15,7 @@ class MemberView extends StatefulWidget {
   static const valueKey = ValueKey("MemberView");
   final Future<List<PostRow>> posts;
   final Future<List<TopicRow>> topics;
-  final Future<List<TopicRow>> directMessageTopics;
+  final Future<List<DirectMessageTopicRow>> directMessageTopics;
   final MemberRow member;
 
   const MemberView({
@@ -89,15 +90,18 @@ class _MemberViewState extends State<MemberView>
                 },
               ),
             ),
-            IpBoardViewerUtils.buildFutureBuilder<List<TopicRow>>(
+            IpBoardViewerUtils.buildFutureBuilder<List<DirectMessageTopicRow>>(
               widget.directMessageTopics,
-              (data) => TopicsView(
+              (data) => DirectMessageTopicsView(
                 key: Key("directMessageTopicsForMember-${widget.member.id}"),
                 topics: data,
                 didSelectTopic: (value) {
                   context.pushNamed(
                     Routes.directMessageTopic,
-                    params: {"mtid": "${value.id}"},
+                    params: {
+                      "fromId": "${value.fromId}",
+                      "toId": "${value.toId}",
+                    },
                   );
                 },
               ),

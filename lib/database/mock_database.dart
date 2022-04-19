@@ -92,17 +92,17 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
   }
 
   @override
-  Future<List<TopicRow>> getDirectMessageTopics(MemberRow member) {
-    List<TopicRow> back = [];
+  Future<List<DirectMessageTopicRow>> getDirectMessageTopics(MemberRow member) {
+    List<DirectMessageTopicRow> back = [];
     for (int i = 0; i < 100; i++) {
       back.add(
-          TopicRow(i, "Topic $i", i * 10, member.name, 1650285761 + i * 2000));
+          DirectMessageTopicRow(i, 2, "Test $i -> Test 2", 123, 1650285761 + i * 2000));
     }
     return toFuture(back);
   }
 
   @override
-  Future<List<PostRow>> getDirectMessages(TopicRow topic) {
+  Future<List<PostRow>> getDirectMessages(int fromId, int toId) {
     List<PostRow> back = [];
     for (int i = 0; i < 100; i++) {
       back.add(PostRow(
@@ -111,16 +111,16 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
           1650285761 + i * 2000,
           "Ich finde $i ist die schönste Zahl der Welt.",
           i,
-          topic.id,
+          fromId,
           "Hallo Welt $i"));
     }
     return toFuture(back);
   }
 
-  @override
-  Future<TopicRow?> getDirectMessageTopic(int id) {
-return  toFuture(TopicRow(id, "Topic $id", id * 10, "abc", 0));
-  }
+//   @override
+//   Future<TopicRow?> getDirectMessageTopic(int id) {
+// return  toFuture(TopicRow(id, "Topic $id", id * 10, "abc", 0));
+//   }
 
   Future<T> toFuture<T>(T forums) {
     var completer = Completer<T>();

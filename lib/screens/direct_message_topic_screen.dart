@@ -6,31 +6,31 @@ import 'package:ipboard3_viewer/views/posts_view.dart';
 
 class DirectMessageTopicScreen extends StatelessWidget {
   final IpBoardDatabaseInterface database;
-  final TopicRow topic;
-  final int? scrollToPostId;
+  final int fromId;
+  final int toId;
 
   const DirectMessageTopicScreen({
     Key? key,
     required this.database,
-    required this.topic,
-    this.scrollToPostId,
+    required this.fromId,
+    required this.toId,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    var posts =
-        database.getDirectMessages(topic).onError(IpBoardViewerUtils.handleError);
+    var posts = database
+        .getDirectMessages(fromId, toId)
+        .onError(IpBoardViewerUtils.handleError);
     return Scaffold(
       appBar: AppBar(
-        title: Text(topic.title),
+        title: Text("DM"),
         leading: BackButton(onPressed: () => context.pop()),
       ),
       body: IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
         posts,
         (data) => PostsView(
-          key: Key("postsForTopic-${topic.id}"),
+          key: Key("postsForTopic-${fromId}-${toId}"),
           posts: data,
-          scrollToPostId: scrollToPostId,
           didSelectPost: (value) async {
             context.push("/member/${value.authorId}");
           },

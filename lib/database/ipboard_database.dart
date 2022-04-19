@@ -137,43 +137,75 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   }
 
   @override
-  Future<TopicRow?> getDirectMessageTopic(int id) async {
-    Results result = await _conn.query(
-      'select mt_id, mt_title, mt_to_count+mt_replies, members_display_name, mt_start_time from message_topics '
-      'left join members on message_topics.mt_starter_id=members.member_id '
-      'where mt_id=?',
-      [id],
-    );
-    if (result.isEmpty) return null;
-    return _parseTopicRow(result.first);
-  }
+  Future<List<DirectMessageTopicRow>> getDirectMessageTopics(
+      MemberRow member,) async {
+    // Results topics = await _conn.query(
+    //   """
+    //   select mt_id, mt_title, m_to_count+mt_replies, CONCAT(m_from.members_display_name, ' -> ', m_to.members_display_name), mt_start_time from message_topics
+    //   left join members as m_from on message_topics.mt_starter_id=m_from.member_id
+    //   left join members as m_to   on message_topics.mt_to_member_id=m_to.member_id
+    //   where mt_starter_id=? or mt_to_member_id=?
+    //   order by mt_start_time desc
+    //   """,
+    //   [member.id, member.id],
+    // );
+    // return topics.map(_parseTopicRow).toList();
 
-  @override
-  Future<List<TopicRow>> getDirectMessageTopics(MemberRow member) async {
     Results topics = await _conn.query(
       """
-      select mt_id, mt_title, mt_to_count+mt_replies, CONCAT(m_from.members_display_name, ' -> ', m_to.members_display_name), mt_start_time from message_topics 
-      left join members as m_from on message_topics.mt_starter_id=m_from.member_id 
-      left join members as m_to   on message_topics.mt_to_member_id=m_to.member_id 
-      where mt_starter_id=? or Mt_to_member_id=? 
-      order by mt_start_time desc
+      select m_from.member_id, m_to.member_id, CONCAT(m_from.members_display_name, ' -> ', m_to.members_display_name), count(1), min(mt_start_time) 
+      from message_posts as post
+      left join message_topics as topic on post.msg_topic_id=topic.mt_id 
+      left join members as m_from      on topic.mt_starter_id=m_from.member_id 
+      left join members as m_to        on topic.mt_to_member_id=m_to.member_id 
+      where m_from.member_id=? or m_to.member_id=?
+      group by m_from.member_id, m_to.member_id
+      order by min(mt_start_time) desc
       """,
       [member.id, member.id],
     );
-    return topics.map(_parseTopicRow).toList();
+    return topics
+        .map((row) {
+          return DirectMessageTopicRow(row[0] ?? -1, row[1] ?? -1, "${row[2]}", row[3], row[4]);
+        })
+        .toList();
   }
 
   @override
-  Future<List<PostRow>> getDirectMessages(TopicRow topic) async {
+  Future<List<PostRow>> getDirectMessages(int fromId, int toId) async {
+    // Results posts = await _conn.query(
+    //   'select msg_id, members_display_name, msg_date, msg_post, msg_topic_id, msg_author_id from message_posts '
+    //   'left join members on message_posts.msg_author_id=members.member_id '
+    //   'where msg_topic_id=? order by msg_date asc',
+    //   [topic.id],
+    // );
+    // return posts
+    //     .map((row) => PostRow(row[0], "${row[1]}", row[2],
+    //         htmlUnescape.convert("${row[3]}"), row[4], row[5], topic.title))
+    //     .toList();
+
     Results posts = await _conn.query(
-      'select msg_id, members_display_name, msg_date, msg_post, msg_topic_id, msg_author_id from message_posts '
-      'left join members on message_posts.msg_author_id=members.member_id '
-      'where msg_topic_id=? order by msg_date asc',
-      [topic.id],
+      """
+      select msg_id, members_display_name, msg_date, msg_post, msg_topic_id, member_id
+      from message_posts as post
+      left join message_topics as topic on post.msg_topic_id=topic.mt_id 
+      left join members on post.msg_author_id=members.member_id
+      where 
+      (topic.mt_starter_id=? and topic.mt_to_member_id=?) or
+      (topic.mt_starter_id=? and topic.mt_to_member_id=?) 
+      order by msg_date asc
+      """,
+      [
+        fromId,
+        toId,
+        toId,
+        fromId,
+      ],
     );
+
     return posts
         .map((row) => PostRow(row[0], "${row[1]}", row[2],
-            htmlUnescape.convert("${row[3]}"), row[4], row[5], topic.title))
+            htmlUnescape.convert("${row[3]}"), row[4], row[5], "DM"))
         .toList();
   }
 
@@ -221,6 +253,17 @@ class TopicRow {
       this.id, this.title, this.postCount, this.starterName, this.startDate);
 }
 
+class DirectMessageTopicRow {
+  int fromId;
+  int toId;
+  String title;
+  int postCount;
+  int startDate;
+
+  DirectMessageTopicRow(
+      this.fromId, this.toId, this.title, this.postCount, this.startDate);
+}
+
 class ForumRow {
   int id;
   String name;
@@ -249,9 +292,10 @@ abstract class IpBoardDatabaseInterface {
 
   Future<MemberRow?> getMember(int id);
 
-  Future<TopicRow?> getDirectMessageTopic(int directMessageTopicId);
+  // Future<DirectMessageTopicRow?> getDirectMessageTopic(
+  //     int directMessageTopicId);
 
-  Future<List<TopicRow>> getDirectMessageTopics(MemberRow member);
+  Future<List<DirectMessageTopicRow>> getDirectMessageTopics(MemberRow member);
 
-  Future<List<PostRow>> getDirectMessages(TopicRow topic);
+  Future<List<PostRow>> getDirectMessages(int fromId, int toId);
 }

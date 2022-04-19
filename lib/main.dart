@@ -48,7 +48,9 @@ class IpBoardViewerApp extends StatelessWidget {
         path: '/forum/:fid',
         builder: (BuildContext context, GoRouterState state) {
           return IpBoardViewerUtils.buildFutureBuilder<ForumRow?>(
-            database.getForum(int.parse(state.params['fid']!)),
+            database
+                .getForum(int.parse(state.params['fid']!))
+                .onError(IpBoardViewerUtils.handleError),
             (data) => ForumScreen(database: database, forum: data!),
           );
         },
@@ -61,7 +63,9 @@ class IpBoardViewerApp extends StatelessWidget {
           int? scrollToPostId = postId != null ? int.parse(postId) : null;
 
           return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
-            database.getTopic(int.parse(state.params['tid']!)),
+            database
+                .getTopic(int.parse(state.params['tid']!))
+                .onError(IpBoardViewerUtils.handleError),
             (data) => TopicScreen(
               database: database,
               topic: data!,
@@ -72,14 +76,15 @@ class IpBoardViewerApp extends StatelessWidget {
       ),
       GoRoute(
         name: Routes.directMessageTopic,
-        path: '/directMessageTopic/:mtid',
+        path: '/directMessageTopic/:fromId/:toId',
         builder: (BuildContext context, GoRouterState state) {
-          return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
-            database.getDirectMessageTopic(int.parse(state.params['mtid']!)),
-            (data) => DirectMessageTopicScreen(
-              database: database,
-              topic: data!,
-            ),
+          int fromId = int.parse(state.params['fromId']!);
+          int toId = int.parse(state.params['toId']!);
+          debugPrint("$fromId -> $toId -> !!");
+          return DirectMessageTopicScreen(
+            database: database,
+            fromId: fromId,
+            toId: toId,
           );
         },
       ),
@@ -88,7 +93,9 @@ class IpBoardViewerApp extends StatelessWidget {
         path: '/member/:mid',
         builder: (BuildContext context, GoRouterState state) {
           return IpBoardViewerUtils.buildFutureBuilder<MemberRow?>(
-            database.getMember(int.parse(state.params['mid']!)),
+            database
+                .getMember(int.parse(state.params['mid']!))
+                .onError(IpBoardViewerUtils.handleError),
             (data) => MemberScreen(database: database, member: data!),
           );
         },
