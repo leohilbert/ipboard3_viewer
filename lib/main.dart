@@ -1,16 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ipboard3_viewer/database.dart';
-import 'package:ipboard3_viewer/forums_view.dart';
-import 'package:ipboard3_viewer/member_view.dart';
-import 'package:ipboard3_viewer/posts_view.dart';
+import 'package:ipboard3_viewer/database/ipboard_database.dart';
+import 'package:ipboard3_viewer/misc/utils.dart';
 import 'package:ipboard3_viewer/routes.dart';
-import 'package:ipboard3_viewer/search_view.dart';
-import 'package:ipboard3_viewer/topics_view.dart';
-import 'package:ipboard3_viewer/utils.dart';
+import 'package:ipboard3_viewer/screens/direct_message_topic_screen.dart';
+import 'package:ipboard3_viewer/screens/forum_screen.dart';
+import 'package:ipboard3_viewer/screens/main_screen.dart';
+import 'package:ipboard3_viewer/screens/member_screen.dart';
+import 'package:ipboard3_viewer/screens/topic_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,12 +59,26 @@ class IpBoardViewerApp extends StatelessWidget {
         builder: (BuildContext context, GoRouterState state) {
           String? postId = state.queryParams['pid'];
           int? scrollToPostId = postId != null ? int.parse(postId) : null;
+
           return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
             database.getTopic(int.parse(state.params['tid']!)),
             (data) => TopicScreen(
               database: database,
               topic: data!,
               scrollToPostId: scrollToPostId,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        name: Routes.directMessageTopic,
+        path: '/directMessageTopic/:mtid',
+        builder: (BuildContext context, GoRouterState state) {
+          return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
+            database.getDirectMessageTopic(int.parse(state.params['mtid']!)),
+            (data) => DirectMessageTopicScreen(
+              database: database,
+              topic: data!,
             ),
           );
         },
@@ -83,138 +95,4 @@ class IpBoardViewerApp extends StatelessWidget {
       ),
     ],
   );
-}
-
-class MainScreen extends StatelessWidget {
-  final IpBoardDatabaseInterface database;
-
-  const MainScreen({Key? key, required this.database}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    Future<List<ForumRow>> forums =
-        database.getForums().onError(IpBoardViewerUtils.handleError);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('IPBoard'),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await showSearch(
-                context: context,
-                delegate: SearchView(
-                  (searchTerm) => database.searchMembers(searchTerm),
-                ),
-              );
-              if (result != null) {
-                context
-                    .pushNamed(Routes.member, params: {'mid': "${result.id}"});
-              }
-            },
-            icon: const Icon(Icons.search),
-          ),
-        ],
-      ),
-      body: IpBoardViewerUtils.buildFutureBuilder<List<ForumRow>>(
-        forums,
-        (data) => ForumsView(
-          forums: data,
-          didSelectForum: (forum) {
-            context.pushNamed(Routes.forum, params: {'fid': "${forum.id}"});
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class ForumScreen extends StatelessWidget {
-  final IpBoardDatabaseInterface database;
-  final ForumRow forum;
-
-  const ForumScreen({Key? key, required this.database, required this.forum})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    var topics =
-        database.getTopics(forum).onError(IpBoardViewerUtils.handleError);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(forum.name),
-        leading: BackButton(onPressed: () => context.pop()),
-      ),
-      body: IpBoardViewerUtils.buildFutureBuilder<List<TopicRow>>(
-        topics,
-        (data) => TopicsView(
-          key: Key("topicsForForum-${forum.id}"),
-          topics: data,
-          didSelectTopic: (topic) => context.pushNamed(
-            Routes.topic,
-            params: {"tid": "${topic.id}"},
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class TopicScreen extends StatelessWidget {
-  final IpBoardDatabaseInterface database;
-  final TopicRow topic;
-  final int? scrollToPostId;
-
-  const TopicScreen({
-    Key? key,
-    required this.database,
-    required this.topic,
-    this.scrollToPostId,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    var posts =
-        database.getPosts(topic).onError(IpBoardViewerUtils.handleError);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(topic.title),
-        leading: BackButton(onPressed: () => context.pop()),
-      ),
-      body: IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
-        posts,
-        (data) => PostsView(
-          key: Key("postsForTopic-${topic.id}"),
-          posts: data,
-          scrollToPostId: scrollToPostId,
-          didSelectPost: (value) async {
-            context.push("/member/${value.authorId}");
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class MemberScreen extends StatelessWidget {
-  final IpBoardDatabaseInterface database;
-  final MemberRow member;
-
-  const MemberScreen({Key? key, required this.database, required this.member})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    var posts = database
-        .getPostsFromMember(member)
-        .onError(IpBoardViewerUtils.handleError);
-    var topics = database
-        .getTopicsFromMember(member)
-        .onError(IpBoardViewerUtils.handleError);
-    return MemberView(
-      key: Key('member-${member.id}'),
-      member: member,
-      posts: posts,
-      topics: topics,
-    );
-  }
 }

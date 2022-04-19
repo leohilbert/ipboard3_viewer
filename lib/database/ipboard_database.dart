@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:mysql1/mysql1.dart';
 
+import 'mock_database.dart';
+
 class IpBoardDatabase implements IpBoardDatabaseInterface {
   static const membersSelect =
       'select member_id, members_display_name, posts, email from members';
@@ -51,8 +53,9 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
     for (ForumRow parentRow in parents.map(_parseForumRow)) {
       rows.add(parentRow);
       Results children = await _conn.query(
-          'select id, name, description, posts from forums where parent_id=? order by position asc',
-          [parentRow.id]);
+        'select id, name, description, posts from forums where parent_id=? order by position asc',
+        [parentRow.id],
+      );
       rows.addAll(children.map(_parseForumRow));
     }
     return rows;
@@ -61,8 +64,9 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<TopicRow>> getTopics(ForumRow forum) async {
     Results topics = await _conn.query(
-        'select tid, title, posts, starter_name, start_date from topics where forum_id=? order by last_post desc',
-        [forum.id]);
+      'select tid, title, posts, starter_name, start_date from topics where forum_id=? order by last_post desc',
+      [forum.id],
+    );
     return topics.map(_parseTopicRow).toList();
   }
 
@@ -79,17 +83,19 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<TopicRow>> getTopicsFromMember(MemberRow member) async {
     Results topics = await _conn.query(
-        'select tid, title, posts, starter_name, start_date from topics where starter_id=? order by start_date desc',
-        [member.id]);
+      'select tid, title, posts, starter_name, start_date from topics where starter_id=? order by start_date desc',
+      [member.id],
+    );
     return topics.map(_parseTopicRow).toList();
   }
 
   @override
   Future<List<PostRow>> getPosts(TopicRow topic) async {
     Results posts = await _conn.query(
-        'select pid, author_name, post_date, post, topic_id, author_id from posts '
-        'where topic_id=? order by post_date asc',
-        [topic.id]);
+      'select pid, author_name, post_date, post, topic_id, author_id from posts '
+      'where topic_id=? order by post_date asc',
+      [topic.id],
+    );
     return posts
         .map((row) => PostRow(row[0], "${row[1]}", row[2],
             htmlUnescape.convert("${row[3]}"), row[4], row[5], topic.title))
@@ -99,10 +105,11 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<PostRow>> getPostsFromMember(MemberRow member) async {
     Results posts = await _conn.query(
-        'select pid, author_name, post_date, post, topic_id, author_id, topics.title from posts '
-        'left join topics on posts.topic_id=topics.tid '
-        'where author_id=? order by post_date asc',
-        [member.id]);
+      'select pid, author_name, post_date, post, topic_id, author_id, topics.title from posts '
+      'left join topics on posts.topic_id=topics.tid '
+      'where author_id=? order by post_date asc',
+      [member.id],
+    );
     return posts
         .map((row) => PostRow(row[0], "${row[1]}", row[2],
             htmlUnescape.convert("${row[3]}"), row[4], row[5], row[6]))
@@ -112,11 +119,12 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<MemberRow>> searchMembers(String searchTerm) async {
     Results members = await _conn.query(
-        '$membersSelect where name like ? '
-        'or email like ? '
-        'or members_display_name like ? '
-        'order by posts desc',
-        ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%"]);
+      '$membersSelect where name like ? '
+      'or email like ? '
+      'or members_display_name like ? '
+      'order by posts desc',
+      ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%"],
+    );
     return members.map(_parseMemberRow).toList();
   }
 
@@ -128,12 +136,51 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
     return _parseMemberRow(result.first);
   }
 
+  @override
+  Future<TopicRow?> getDirectMessageTopic(int id) async {
+    print("getting $id");
+    Results result = await _conn.query(
+      'select mt_id, mt_title, mt_to_count+mt_replies, members_display_name, mt_start_time from message_topics '
+      'left join members on message_topics.mt_starter_id=members.member_id '
+      'where mt_id=?',
+      [id],
+    );
+    if (result.isEmpty) return null;
+    return _parseTopicRow(result.first);
+  }
+
+  @override
+  Future<List<TopicRow>> getDirectMessageTopics(MemberRow member) async {
+    Results topics = await _conn.query(
+      'select mt_id, mt_title, mt_to_count+mt_replies, members_display_name, mt_start_time from message_topics '
+      'left join members on message_topics.mt_starter_id=members.member_id '
+      'where mt_starter_id=? or Mt_to_member_id=? '
+      'order by mt_start_time desc',
+      [member.id, member.id],
+    );
+    return topics.map(_parseTopicRow).toList();
+  }
+
+  @override
+  Future<List<PostRow>> getDirectMessages(TopicRow topic) async {
+    Results posts = await _conn.query(
+      'select msg_id, members_display_name, msg_date, msg_post, msg_topic_id, msg_author_id from message_posts '
+      'left join members on message_posts.msg_author_id=members.member_id '
+      'where msg_topic_id=? order by msg_date asc',
+      [topic.id],
+    );
+    return posts
+        .map((row) => PostRow(row[0], "${row[1]}", row[2],
+            htmlUnescape.convert("${row[3]}"), row[4], row[5], topic.title))
+        .toList();
+  }
+
   ForumRow _parseForumRow(ResultRow row) {
     return ForumRow(row[0], row[1], "${row[2]}", row[3]);
   }
 
   TopicRow _parseTopicRow(ResultRow row) =>
-      TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], row[3], row[4]);
+      TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], "${row[3]}", row[4]);
 
   MemberRow _parseMemberRow(ResultRow row) =>
       MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");
@@ -181,101 +228,6 @@ class ForumRow {
   ForumRow(this.id, this.name, this.description, this.parentId);
 }
 
-class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
-  @override
-  Future<ForumRow> getForum(int id) {
-    return toFuture(ForumRow(id, "Forum $id", "Description $id", 0));
-  }
-
-  @override
-  Future<List<ForumRow>> getForums() {
-    List<ForumRow> back = [];
-    back.add(ForumRow(0, "Main", "", -1));
-    for (int i = 1; i < 100; i++) {
-      back.add(ForumRow(i, "Forum $i", "Description $i", 0));
-    }
-    return toFuture(back);
-  }
-
-  @override
-  Future<MemberRow?> getMember(int id) {
-    return toFuture(MemberRow(id, "User $id", 123, "$id@aol.de"));
-  }
-
-  @override
-  Future<List<PostRow>> getPosts(TopicRow topic) {
-    List<PostRow> back = [];
-    for (int i = 0; i < 100; i++) {
-      back.add(PostRow(
-          i,
-          "User $i",
-          1650285761 + i * 2000,
-          "Ich finde $i ist die schönste Zahl der Welt.",
-          topic.id,
-          i,
-          "Hallo Welt $i"));
-    }
-    return toFuture(back);
-  }
-
-  @override
-  Future<List<PostRow>> getPostsFromMember(MemberRow member) {
-    List<PostRow> back = [];
-    for (int i = 0; i < 100; i++) {
-      back.add(PostRow(
-          i,
-          "User $i",
-          1650285761 + i * 2000,
-          "Ich finde $i ist die schönste Zahl der Welt.",
-          i,
-          member.id,
-          "Hallo Welt $i"));
-    }
-    return toFuture(back);
-  }
-
-  @override
-  Future<List<TopicRow>> getTopics(ForumRow forum) {
-    List<TopicRow> back = [];
-    for (int i = 0; i < 100; i++) {
-      back.add(
-          TopicRow(i, "Topic $i", i * 10, "User $i", 1650285761 + i * 2000));
-    }
-    return toFuture(back);
-  }
-
-  @override
-  Future<TopicRow?> getTopic(int topicId) {
-    return toFuture(TopicRow(
-        topicId, "Topic $topicId", topicId * 10, "User $topicId", 1650285761));
-  }
-
-  @override
-  Future<List<TopicRow>> getTopicsFromMember(MemberRow member) {
-    List<TopicRow> back = [];
-    for (int i = 0; i < 100; i++) {
-      back.add(
-          TopicRow(i, "Topic $i", i * 10, member.name, 1650285761 + i * 2000));
-    }
-    return toFuture(back);
-  }
-
-  @override
-  Future<List<MemberRow>> searchMembers(String searchTerm) {
-    List<MemberRow> back = [];
-    for (int id = 0; id < 100; id++) {
-      back.add(MemberRow(id, "User $id", 123, "$id@aol.de"));
-    }
-    return toFuture(back);
-  }
-
-  Future<T> toFuture<T>(T forums) {
-    var completer = Completer<T>();
-    completer.complete(forums);
-    return completer.future;
-  }
-}
-
 abstract class IpBoardDatabaseInterface {
   Future<List<ForumRow>> getForums();
 
@@ -294,4 +246,9 @@ abstract class IpBoardDatabaseInterface {
   Future<List<MemberRow>> searchMembers(String searchTerm);
 
   Future<MemberRow?> getMember(int id);
+
+  Future<TopicRow?> getDirectMessageTopic(int directMessageTopicId);
+  Future<List<TopicRow>> getDirectMessageTopics(MemberRow member);
+
+  Future<List<PostRow>> getDirectMessages(TopicRow topic);
 }

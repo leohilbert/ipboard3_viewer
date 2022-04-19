@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ipboard3_viewer/utils.dart';
+import 'package:ipboard3_viewer/misc/utils.dart';
 
-import 'database.dart';
+import '../database/ipboard_database.dart';
 
 class TopicsView extends StatelessWidget {
   static const valueKey = ValueKey("TopicsView");

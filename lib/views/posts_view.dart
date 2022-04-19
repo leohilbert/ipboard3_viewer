@@ -2,12 +2,12 @@ import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:html/dom.dart' as dom;
-import 'package:ipboard3_viewer/utils.dart';
+import 'package:ipboard3_viewer/misc/utils.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'bb_code_converter.dart';
-import 'database.dart';
+import '../misc/bb_code_converter.dart';
+import '../database/ipboard_database.dart';
 
 class PostsView extends StatelessWidget {
   static const valueKey = ValueKey("PostsView");

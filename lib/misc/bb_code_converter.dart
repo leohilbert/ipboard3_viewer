@@ -327,7 +327,7 @@ class BBCodeConverter {
       //output += '</p></details>';
       output += '/HIDE';
     } else if (match(r"^\[\/img\]$", tag)) {
-      var params = this.params.length == 2 ? """width="${this.params[0]}" height="${this.params[1]}" """ : '';
+      //var params = this.params.length == 2 ? """width="${this.params[0]}" height="${this.params[1]}" """ : '';
       this.params = [];
       if (captureUrl) {
         captureUrl = false;
