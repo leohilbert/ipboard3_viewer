@@ -42,7 +42,6 @@ class PostsView extends StatelessWidget {
     }
     return ListView.builder(
       key: PageStorageKey<String>(key.toString()),
-      shrinkWrap: true,
       controller: controller,
       itemCount: posts.length,
       itemBuilder: (context, index) {

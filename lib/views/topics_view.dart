@@ -18,7 +18,6 @@ class TopicsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       key: PageStorageKey<String>(key.toString()),
-      shrinkWrap: true,
       controller: IpBoardViewerUtils.getFastScrollController(),
       itemCount: topics.length,
       itemBuilder: (context, index) {

@@ -138,7 +138,6 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
 
   @override
   Future<TopicRow?> getDirectMessageTopic(int id) async {
-    print("getting $id");
     Results result = await _conn.query(
       'select mt_id, mt_title, mt_to_count+mt_replies, members_display_name, mt_start_time from message_topics '
       'left join members on message_topics.mt_starter_id=members.member_id '
@@ -152,10 +151,13 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<TopicRow>> getDirectMessageTopics(MemberRow member) async {
     Results topics = await _conn.query(
-      'select mt_id, mt_title, mt_to_count+mt_replies, members_display_name, mt_start_time from message_topics '
-      'left join members on message_topics.mt_starter_id=members.member_id '
-      'where mt_starter_id=? or Mt_to_member_id=? '
-      'order by mt_start_time desc',
+      """
+      select mt_id, mt_title, mt_to_count+mt_replies, CONCAT(m_from.members_display_name, ' -> ', m_to.members_display_name), mt_start_time from message_topics 
+      left join members as m_from on message_topics.mt_starter_id=m_from.member_id 
+      left join members as m_to   on message_topics.mt_to_member_id=m_to.member_id 
+      where mt_starter_id=? or Mt_to_member_id=? 
+      order by mt_start_time desc
+      """,
       [member.id, member.id],
     );
     return topics.map(_parseTopicRow).toList();
@@ -179,8 +181,8 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
     return ForumRow(row[0], row[1], "${row[2]}", row[3]);
   }
 
-  TopicRow _parseTopicRow(ResultRow row) =>
-      TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], "${row[3]}", row[4]);
+  TopicRow _parseTopicRow(ResultRow row) => TopicRow(
+      row[0], htmlUnescape.convert(row[1]), row[2], "${row[3]}", row[4]);
 
   MemberRow _parseMemberRow(ResultRow row) =>
       MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");
@@ -248,6 +250,7 @@ abstract class IpBoardDatabaseInterface {
   Future<MemberRow?> getMember(int id);
 
   Future<TopicRow?> getDirectMessageTopic(int directMessageTopicId);
+
   Future<List<TopicRow>> getDirectMessageTopics(MemberRow member);
 
   Future<List<PostRow>> getDirectMessages(TopicRow topic);
