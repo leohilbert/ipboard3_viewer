@@ -47,11 +47,11 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   Future<List<ForumRow>> getForums() async {
     List<ForumRow> rows = [];
     Results parents = await _conn.query(
-        'select id, name, description, parent_id from forums where parent_id=-1 order by position');
+        'select id, name, description, parent_id from forums where parent_id=-1 order by position asc');
     for (ForumRow parentRow in parents.map(_parseForumRow)) {
       rows.add(parentRow);
       Results children = await _conn.query(
-          'select id, name, description, posts from forums where parent_id=? order by position',
+          'select id, name, description, posts from forums where parent_id=? order by position asc',
           [parentRow.id]);
       rows.addAll(children.map(_parseForumRow));
     }
@@ -61,7 +61,7 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<TopicRow>> getTopics(ForumRow forum) async {
     Results topics = await _conn.query(
-        'select tid, title, posts, starter_name from topics where forum_id=? order by last_post desc',
+        'select tid, title, posts, starter_name, start_date from topics where forum_id=? order by last_post desc',
         [forum.id]);
     return topics.map(_parseTopicRow).toList();
   }
@@ -69,7 +69,7 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<TopicRow?> getTopic(int topicId) async {
     Results result = await _conn.query(
-      'select tid, title, posts, starter_name from topics where tid=? order by last_post desc',
+      'select tid, title, posts, starter_name, start_date from topics where tid=? order by last_post desc',
       [topicId],
     );
     if (result.isNotEmpty) return _parseTopicRow(result.first);
@@ -79,7 +79,7 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   @override
   Future<List<TopicRow>> getTopicsFromMember(MemberRow member) async {
     Results topics = await _conn.query(
-        'select tid, title, posts, starter_name from topics where starter_id=? order by start_date desc',
+        'select tid, title, posts, starter_name, start_date from topics where starter_id=? order by start_date desc',
         [member.id]);
     return topics.map(_parseTopicRow).toList();
   }
@@ -101,7 +101,7 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
     Results posts = await _conn.query(
         'select pid, author_name, post_date, post, topic_id, author_id, topics.title from posts '
         'left join topics on posts.topic_id=topics.tid '
-        'where author_id=? order by post_date asc',
+        'where author_id=? order by post_date desc',
         [member.id]);
     return posts
         .map((row) => PostRow(row[0], "${row[1]}", row[2],
@@ -132,7 +132,7 @@ class IpBoardDatabase implements IpBoardDatabaseInterface {
   }
 
   TopicRow _parseTopicRow(ResultRow row) =>
-      TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], row[3]);
+      TopicRow(row[0], htmlUnescape.convert(row[1]), row[2], row[3], row[4]);
 
   MemberRow _parseMemberRow(ResultRow row) =>
       MemberRow(row[0], "${row[1]}", row[2], "${row[3]}");
@@ -165,8 +165,10 @@ class TopicRow {
   String title;
   int postCount;
   String starterName;
+  int startDate;
 
-  TopicRow(this.id, this.title, this.postCount, this.starterName);
+  TopicRow(
+      this.id, this.title, this.postCount, this.starterName, this.startDate);
 }
 
 class ForumRow {
@@ -235,22 +237,24 @@ class IpBoardDatabaseMock implements IpBoardDatabaseInterface {
   Future<List<TopicRow>> getTopics(ForumRow forum) {
     List<TopicRow> back = [];
     for (int i = 0; i < 100; i++) {
-      back.add(TopicRow(i, "Topic $i", i * 10, "User $i"));
+      back.add(
+          TopicRow(i, "Topic $i", i * 10, "User $i", 1650285761 + i * 2000));
     }
     return toFuture(back);
   }
 
   @override
   Future<TopicRow?> getTopic(int topicId) {
-    return toFuture(
-        TopicRow(topicId, "Topic $topicId", topicId * 10, "User $topicId"));
+    return toFuture(TopicRow(
+        topicId, "Topic $topicId", topicId * 10, "User $topicId", 1650285761));
   }
 
   @override
   Future<List<TopicRow>> getTopicsFromMember(MemberRow member) {
     List<TopicRow> back = [];
     for (int i = 0; i < 100; i++) {
-      back.add(TopicRow(i, "Topic $i", i * 10, member.name));
+      back.add(
+          TopicRow(i, "Topic $i", i * 10, member.name, 1650285761 + i * 2000));
     }
     return toFuture(back);
   }

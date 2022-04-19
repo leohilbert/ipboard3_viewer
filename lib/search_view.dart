@@ -43,6 +43,7 @@ class SearchView extends SearchDelegate<MemberRow?> {
     return IpBoardViewerUtils.buildFutureBuilder<List<MemberRow>>(
       future,
       (data) => ListView.builder(
+        key: const PageStorageKey<String>('searchView'),
         controller: IpBoardViewerUtils.getFastScrollController(),
         itemCount: data.length,
         itemBuilder: (context, index) {

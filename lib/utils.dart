@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
 
 class IpBoardViewerUtils {
   static FutureBuilder<D> buildFutureBuilder<D>(
@@ -47,5 +48,10 @@ class IpBoardViewerUtils {
       }
     });
     return _scrollController;
+  }
+
+  static String parseUnixDate(int unix) {
+    return DateFormat('dd.MM.yy HH:mm:ss')
+        .format(DateTime.fromMillisecondsSinceEpoch(unix * 1000));
   }
 }

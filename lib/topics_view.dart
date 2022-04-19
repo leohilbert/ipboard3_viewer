@@ -15,6 +15,7 @@ class TopicsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      key: PageStorageKey<String>(key.toString()),
       shrinkWrap: true,
       controller: IpBoardViewerUtils.getFastScrollController(),
       itemCount: topics.length,
@@ -30,6 +31,7 @@ class TopicsView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(row.starterName),
+                Text(IpBoardViewerUtils.parseUnixDate(row.startDate)),
                 Text("Posts: ${row.postCount}"),
               ],
             ),

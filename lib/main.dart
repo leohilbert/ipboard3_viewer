@@ -7,6 +7,7 @@ import 'package:ipboard3_viewer/database.dart';
 import 'package:ipboard3_viewer/forums_view.dart';
 import 'package:ipboard3_viewer/member_view.dart';
 import 'package:ipboard3_viewer/posts_view.dart';
+import 'package:ipboard3_viewer/routes.dart';
 import 'package:ipboard3_viewer/search_view.dart';
 import 'package:ipboard3_viewer/topics_view.dart';
 import 'package:ipboard3_viewer/utils.dart';
@@ -20,45 +21,10 @@ void main() async {
 class IpBoardViewerApp extends StatelessWidget {
   final IpBoardDatabaseInterface database;
 
-  const IpBoardViewerApp({Key? key, required this.database}) : super(key: key);
+  IpBoardViewerApp({Key? key, required this.database}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final GoRouter _router = GoRouter(
-      routes: <GoRoute>[
-        GoRoute(
-          path: '/',
-          builder: (BuildContext context, GoRouterState state) => MainScreen(
-            database: database,
-          ),
-        ),
-        GoRoute(
-          path: '/forum/:fid',
-          builder: (BuildContext context, GoRouterState state) {
-            return IpBoardViewerUtils.buildFutureBuilder<ForumRow?>(
-                database.getForum(int.parse(state.params['fid']!)),
-                (data) => ForumScreen(database: database, forum: data!));
-          },
-        ),
-        GoRoute(
-          path: '/topic/:tid',
-          builder: (BuildContext context, GoRouterState state) {
-            return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
-                database.getTopic(int.parse(state.params['tid']!)),
-                (data) => TopicScreen(database: database, topic: data!));
-          },
-        ),
-        GoRoute(
-          path: '/member/:mid',
-          builder: (BuildContext context, GoRouterState state) {
-            return IpBoardViewerUtils.buildFutureBuilder<MemberRow?>(
-                database.getMember(int.parse(state.params['mid']!)),
-                (data) => MemberScreen(database: database, member: data!));
-          },
-        ),
-      ],
-    );
-
     return MaterialApp.router(
       title: 'IPBoard3 Viewer',
       routeInformationParser: _router.routeInformationParser,
@@ -69,6 +35,45 @@ class IpBoardViewerApp extends StatelessWidget {
       ),
     );
   }
+
+  late final GoRouter _router = GoRouter(
+    routes: <GoRoute>[
+      GoRoute(
+        name: Routes.main,
+        path: '/',
+        builder: (BuildContext context, GoRouterState state) => MainScreen(
+          database: database,
+        ),
+      ),
+      GoRoute(
+        name: Routes.forum,
+        path: '/forum/:fid',
+        builder: (BuildContext context, GoRouterState state) {
+          return IpBoardViewerUtils.buildFutureBuilder<ForumRow?>(
+              database.getForum(int.parse(state.params['fid']!)),
+                  (data) => ForumScreen(database: database, forum: data!));
+        },
+      ),
+      GoRoute(
+        name: Routes.topic,
+        path: '/topic/:tid',
+        builder: (BuildContext context, GoRouterState state) {
+          return IpBoardViewerUtils.buildFutureBuilder<TopicRow?>(
+              database.getTopic(int.parse(state.params['tid']!)),
+                  (data) => TopicScreen(database: database, topic: data!));
+        },
+      ),
+      GoRoute(
+        name: Routes.member,
+        path: '/member/:mid',
+        builder: (BuildContext context, GoRouterState state) {
+          return IpBoardViewerUtils.buildFutureBuilder<MemberRow?>(
+              database.getMember(int.parse(state.params['mid']!)),
+                  (data) => MemberScreen(database: database, member: data!));
+        },
+      ),
+    ],
+  );
 }
 
 class MainScreen extends StatelessWidget {
@@ -93,7 +98,8 @@ class MainScreen extends StatelessWidget {
                 ),
               );
               if (result != null) {
-                context.go("/member/${result.id}");
+                context
+                    .pushNamed(Routes.member, params: {'mid': "${result.id}"});
               }
             },
             icon: const Icon(Icons.search),
@@ -105,7 +111,7 @@ class MainScreen extends StatelessWidget {
         (data) => ForumsView(
           forums: data,
           didSelectForum: (forum) {
-            context.go("/forum/${forum.id}");
+            context.pushNamed(Routes.forum, params: {'fid': "${forum.id}"});
           },
         ),
       ),
@@ -127,12 +133,15 @@ class ForumScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(forum.name),
+        leading: BackButton(onPressed: () => context.pop()),
       ),
       body: IpBoardViewerUtils.buildFutureBuilder<List<TopicRow>>(
         topics,
         (data) => TopicsView(
+          key: Key("topicsForForum-${forum.id}"),
           topics: data,
-          didSelectTopic: (topic) => context.go('/topic/${topic.id}'),
+          didSelectTopic: (topic) =>
+              context.pushNamed(Routes.topic, params: {"tid": "${topic.id}"}),
         ),
       ),
     );
@@ -151,13 +160,17 @@ class TopicScreen extends StatelessWidget {
     var posts =
         database.getPosts(topic).onError(IpBoardViewerUtils.handleError);
     return Scaffold(
-      appBar: AppBar(title: Text(topic.title)),
+      appBar: AppBar(
+        title: Text(topic.title),
+        leading: BackButton(onPressed: () => context.pop()),
+      ),
       body: IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
         posts,
         (data) => PostsView(
+          key: Key("postsForTopic-${topic.id}"),
           posts: data,
           didSelectPost: (value) async {
-            context.go("/member/${value.authorId}");
+            context.push("/member/${value.authorId}");
           },
         ),
       ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ipboard3_viewer/posts_view.dart';
+import 'package:ipboard3_viewer/routes.dart';
 import 'package:ipboard3_viewer/topics_view.dart';
 import 'package:ipboard3_viewer/utils.dart';
-
+import 'package:go_router/go_router.dart';
 import 'database.dart';
 
 class MemberView extends StatelessWidget {
@@ -37,16 +38,22 @@ class MemberView extends StatelessWidget {
                 IpBoardViewerUtils.buildFutureBuilder<List<PostRow>>(
                   posts,
                   (data) => PostsView(
+                    key: Key("postsForMember-${member.id}"),
                     posts: data,
                     memberView: true,
-                    didSelectPost: (value) {},
+                    didSelectPost: (value) {
+                      context.pushNamed(Routes.topic, params: {"tid": "${value.topicId}"});
+                    },
                   ),
                 ),
                 IpBoardViewerUtils.buildFutureBuilder<List<TopicRow>>(
                   topics,
                   (data) => TopicsView(
+                    key: Key("topicsForMember-${member.id}"),
                     topics: data,
-                    didSelectTopic: (value) {},
+                    didSelectTopic: (value) {
+                      context.pushNamed(Routes.topic, params: {"tid": "${value.id}"});
+                    },
                   ),
                 ),
               ],

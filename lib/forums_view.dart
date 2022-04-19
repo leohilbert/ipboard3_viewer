@@ -15,6 +15,7 @@ class ForumsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      key: const PageStorageKey<String>('forumView'),
       controller: IpBoardViewerUtils.getFastScrollController(),
       itemCount: forums.length,
       itemBuilder: (context, index) {
